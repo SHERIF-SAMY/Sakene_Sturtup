@@ -39,6 +39,16 @@ export default function AdminUsers() {
     load();
   };
 
+  const deleteUser = async (u: Profile) => {
+    if (!window.confirm(`Are you sure you want to completely delete ${u.first_name} ${u.last_name}?`)) return;
+    try {
+      await apiSend('/api/profiles', 'DELETE', { id: u.id });
+      load();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to delete');
+    }
+  };
+
   if (loading) return <LoadingSpinner />;
 
   return (
@@ -69,10 +79,11 @@ export default function AdminUsers() {
                     {u.is_verified ? 'Unverify' : 'Verify'}
                   </button>
                   {u.status === 'active' ? (
-                    <button onClick={() => setStatus(u, 'suspended')} className="text-xs font-semibold text-red-600">Suspend</button>
+                    <button onClick={() => setStatus(u, 'suspended')} className="text-xs font-semibold text-orange-600">Suspend</button>
                   ) : (
                     <button onClick={() => setStatus(u, 'active')} className="text-xs font-semibold text-emerald-600">Activate</button>
                   )}
+                  <button onClick={() => deleteUser(u)} className="text-xs font-semibold text-red-600">Delete</button>
                 </td>
               </tr>
             ))}

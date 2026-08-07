@@ -1,7 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiGet, apiSend } from '../../lib/api';
 import { useAuth } from '../../contexts/AuthContext';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL as string,
+  import.meta.env.VITE_SUPABASE_ANON_KEY as string
+);
 
 type Opt = { id: number; name: string };
 
@@ -22,6 +28,8 @@ export default function AddProperty() {
   const [brokerId, setBrokerId] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState({
     title: '',
@@ -40,7 +48,8 @@ export default function AddProperty() {
     price: '4500',
     deposit: '4500',
     amenityIds: [] as number[],
-    image: IMAGE_PRESETS[0],
+    images: [] as string[],
+    coverIndex: 0,
   });
 
   useEffect(() => {
@@ -55,6 +64,41 @@ export default function AddProperty() {
   }, [user]);
 
   const set = (k: string, v: string | boolean | number[]) => setForm((f) => ({ ...f, [k]: v }));
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    setUploading(true);
+    setError('');
+    const newUrls: string[] = [];
+    for (const file of files) {
+      try {
+        const ext = file.name.split('.').pop();
+        const fileName = `property_${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+        const { error: uploadError } = await supabase.storage
+          .from('property-images')
+          .upload(fileName, file, { upsert: true });
+        if (uploadError) throw new Error(uploadError.message);
+        const { data } = supabase.storage.from('property-images').getPublicUrl(fileName);
+        newUrls.push(data.publicUrl);
+      } catch {
+        // Fallback: use local object URL for preview
+        newUrls.push(URL.createObjectURL(file));
+      }
+    }
+    setForm((f) => ({ ...f, images: [...f.images, ...newUrls] }));
+    setUploading(false);
+    // reset input so same files can be re-selected
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const removeImage = (idx: number) => {
+    setForm((f) => {
+      const imgs = f.images.filter((_, i) => i !== idx);
+      const cover = idx === f.coverIndex ? 0 : f.coverIndex > idx ? f.coverIndex - 1 : f.coverIndex;
+      return { ...f, images: imgs, coverIndex: Math.max(0, cover) };
+    });
+  };
 
   const toggleAmenity = (id: number) => {
     setForm((f) => ({
@@ -95,7 +139,7 @@ export default function AddProperty() {
         owner_id: user.id,
         status: 'active',
         amenities: form.amenityIds,
-        images: [form.image],
+        images: form.images.length ? form.images : [IMAGE_PRESETS[0]],
         listings: [
           {
             listing_type: form.listing_type,
@@ -104,14 +148,20 @@ export default function AddProperty() {
             minimum_months: 1,
           },
         ],
-        rooms: [
-          {
-            name: 'Room 1',
-            beds_count: form.listing_type === 'shared_bed' ? 2 : 1,
+        rooms: (() => {
+          const bedroomCount = Math.max(1, Number(form.bedrooms));
+          const bedsPerRoom = form.listing_type === 'shared_bed' ? 2 : 1;
+          const bedLetters = ['A', 'B', 'C', 'D'];
+          return Array.from({ length: bedroomCount }, (_, roomIdx) => ({
+            name: bedroomCount === 1 ? 'Room 1' : `Room ${roomIdx + 1}`,
+            beds_count: bedsPerRoom,
             gender: form.gender_allowed,
-            beds: [{ bed_number: 'A', price: Number(form.price) }],
-          },
-        ],
+            beds: Array.from({ length: bedsPerRoom }, (_, bedIdx) => ({
+              bed_number: bedLetters[bedIdx] ?? String(bedIdx + 1),
+              price: Number(form.price),
+            })),
+          }));
+        })(),
       });
       navigate(`/properties/${prop.id}`);
     } catch (err: unknown) {
@@ -176,19 +226,82 @@ export default function AddProperty() {
       </div>
 
       <div>
-        <label className="text-xs font-semibold text-slate-500 uppercase">Cover image</label>
-        <div className="mt-2 grid grid-cols-5 gap-2">
-          {IMAGE_PRESETS.map((url) => (
-            <button
-              key={url}
-              type="button"
-              onClick={() => set('image', url)}
-              className={`aspect-video rounded-xl overflow-hidden border-2 ${form.image === url ? 'border-brand-600' : 'border-transparent'}`}
-            >
-              <img src={url} alt="" className="w-full h-full object-cover" />
-            </button>
-          ))}
+        <div className="flex items-center justify-between mb-2">
+          <label className="text-xs font-semibold text-slate-500 uppercase">Photos ({form.images.length})</label>
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-600 text-white text-xs font-semibold hover:bg-brand-700 disabled:opacity-60 transition-colors"
+          >
+            {uploading ? (
+              <svg className="animate-spin w-3.5 h-3.5" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/></svg>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1M12 12V4m0 0L8 8m4-4l4 4" />
+              </svg>
+            )}
+            {uploading ? 'Uploading…' : 'Add photos'}
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={handleImageUpload}
+          />
         </div>
+
+        {form.images.length === 0 ? (
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="w-full h-36 rounded-2xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center gap-2 text-slate-400 hover:border-brand-400 hover:text-brand-500 transition-colors"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5M21 7.5V18M12 3v4.5" />
+            </svg>
+            <span className="text-sm font-medium">Click to upload photos</span>
+            <span className="text-xs">JPG, PNG, WEBP — multiple files supported</span>
+          </button>
+        ) : (
+          <div className="grid grid-cols-4 gap-2">
+            {form.images.map((url, idx) => (
+              <div key={idx} className="relative group aspect-video rounded-xl overflow-hidden">
+                <img src={url} alt={`photo ${idx + 1}`} className="w-full h-full object-cover" />
+                {/* Cover badge */}
+                {idx === form.coverIndex && (
+                  <span className="absolute top-1 left-1 bg-brand-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md">Cover</span>
+                )}
+                {/* Hover actions */}
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                  {idx !== form.coverIndex && (
+                    <button
+                      type="button"
+                      onClick={() => setForm((f) => ({ ...f, coverIndex: idx }))}
+                      className="bg-white/90 text-slate-700 text-[10px] font-semibold px-2 py-1 rounded-lg hover:bg-white"
+                    >
+                      Set cover
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => removeImage(idx)}
+                    className="bg-red-500 text-white p-1 rounded-lg hover:bg-red-600"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        {form.images.length > 0 && (
+          <p className="mt-1.5 text-xs text-slate-400">Hover on a photo to set it as cover or remove it.</p>
+        )}
       </div>
 
       <div>
