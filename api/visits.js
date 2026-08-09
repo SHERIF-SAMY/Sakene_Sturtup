@@ -43,7 +43,22 @@ export default async function handler(req, res) {
 
       let q = supabase.from('visits').select('*').order('visit_date', { ascending: false });
       if (student_id) q = q.eq('student_id', student_id);
-      if (broker_id) q = q.eq('broker_id', broker_id);
+
+      // broker_id query param is a UUID (user_id from auth) — convert to broker_profiles.id (integer)
+      if (broker_id) {
+        const { data: bpRow } = await supabase
+          .from('broker_profiles')
+          .select('id')
+          .eq('user_id', broker_id)
+          .maybeSingle();
+        if (bpRow) {
+          q = q.eq('broker_id', bpRow.id);
+        } else {
+          // No broker profile found for this user, return empty
+          return res.status(200).json([]);
+        }
+      }
+
       const { data: qData, error: qError } = await q;
       if (qError) throw qError;
 
@@ -76,9 +91,21 @@ export default async function handler(req, res) {
           const { data: s } = await supabase.from('profiles').select('first_name, last_name, email, phone, avatar').eq('id', v.student_id).single();
           student = s;
         }
+        // v.broker_id is broker_profiles.id (integer) — look up the profile via broker_profiles
         if (v.broker_id) {
-          const { data: b } = await supabase.from('profiles').select('first_name, last_name, email, phone').eq('id', v.broker_id).single();
-          broker = b;
+          const { data: bp } = await supabase
+            .from('broker_profiles')
+            .select('user_id, company_name')
+            .eq('id', v.broker_id)
+            .single();
+          if (bp?.user_id) {
+            const { data: b } = await supabase
+              .from('profiles')
+              .select('first_name, last_name, email, phone')
+              .eq('id', bp.user_id)
+              .single();
+            broker = b;
+          }
         }
         return { ...v, listings: listing, student, broker };
       }));
@@ -92,23 +119,61 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'listing_id, student_id, visit_date, visit_time required' });
       }
 
-      let resolvedBroker = broker_id;
-      if (!resolvedBroker) {
+      let resolvedBrokerId = null;   // integer (broker_profiles.id) — for DB insert
+      let resolvedBrokerUserId = null; // UUID — for notifications
+
+      if (broker_id) {
+        // broker_id passed from frontend is a UUID (user_id)
+        resolvedBrokerUserId = broker_id;
+        const { data: bp } = await supabase
+          .from('broker_profiles')
+          .select('id')
+          .eq('user_id', broker_id)
+          .maybeSingle();
+        resolvedBrokerId = bp?.id || null;
+      } else {
+        // Look up broker from the listing's property
         const { data: listing } = await supabase
           .from('listings')
           .select('property_id, properties(broker_id)')
           .eq('id', listing_id)
           .single();
-        resolvedBroker = listing?.properties?.broker_id;
-        // broker_id on properties is broker_profiles.id — need user_id
-        if (resolvedBroker) {
+        resolvedBrokerId = listing?.properties?.broker_id || null; // already an integer
+        if (resolvedBrokerId) {
           const { data: bp } = await supabase
             .from('broker_profiles')
             .select('user_id')
-            .eq('id', resolvedBroker)
+            .eq('id', resolvedBrokerId)
             .single();
-          resolvedBroker = bp?.user_id || resolvedBroker;
+          resolvedBrokerUserId = bp?.user_id || null;
         }
+      }
+
+      // Validate: visit date must not be in the past
+      const today = new Date().toISOString().slice(0, 10);
+      if (visit_date < today) {
+        return res.status(400).json({ error: 'Visit date cannot be in the past.' });
+      }
+      // If today, validate that time hasn't already passed
+      if (visit_date === today) {
+        const nowHour = new Date().getHours();
+        const visitHour = parseInt(visit_time.split(':')[0], 10);
+        if (visitHour <= nowHour) {
+          return res.status(400).json({ error: 'Visit time has already passed for today. Please choose a future time.' });
+        }
+      }
+
+      // Double-booking check: prevent two students from booking the same slot
+      const { data: existing } = await supabase
+        .from('visits')
+        .select('id')
+        .eq('listing_id', listing_id)
+        .eq('visit_date', visit_date)
+        .eq('visit_time', visit_time)
+        .in('status', ['pending', 'confirmed'])
+        .maybeSingle();
+      if (existing) {
+        return res.status(409).json({ error: 'This time slot is already booked. Please choose a different date or time.' });
       }
 
       const { data, error } = await supabase
@@ -116,36 +181,36 @@ export default async function handler(req, res) {
         .insert({
           listing_id,
           student_id,
-          broker_id: resolvedBroker,
+          broker_id: resolvedBrokerId,  // integer (broker_profiles.id)
           visit_date,
           visit_time,
           status: 'pending',
-          booking_fee: booking_fee || 50,
-          payment_status: 'paid',
           notes: notes || '',
         })
         .select()
         .single();
       if (error) throw error;
 
-      await supabase.from('notifications').insert([
+      // Send notifications using UUID (user_id)
+      const notifRows = [
         {
           user_id: student_id,
           title: 'Visit Booked',
           message: `Your visit on ${visit_date} at ${visit_time} has been requested.`,
-          type: 'booking',
+          type: 'new_visit',
           is_read: false,
         },
-        resolvedBroker
+        resolvedBrokerUserId
           ? {
-              user_id: resolvedBroker,
+              user_id: resolvedBrokerUserId,
               title: 'New Visit Request',
               message: `A student requested a visit on ${visit_date} at ${visit_time}.`,
-              type: 'booking',
+              type: 'new_visit',
               is_read: false,
             }
           : null,
-      ].filter(Boolean));
+      ].filter(Boolean);
+      await supabase.from('notifications').insert(notifRows);
 
       return res.status(201).json(data);
     }
@@ -165,7 +230,7 @@ export default async function handler(req, res) {
           user_id: data.student_id,
           title: `Visit ${status}`,
           message: `Your visit on ${data.visit_date} was marked as ${status}.`,
-          type: 'booking',
+          type: status === 'confirmed' ? 'visit_confirmed' : status === 'cancelled' ? 'visit_cancelled' : 'booking',
           is_read: false,
         });
       }

@@ -72,6 +72,7 @@ export default function PropertyDetails() {
   const [booking, setBooking] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [bookedSlots, setBookedSlots] = useState<string[]>([]);
 
   useEffect(() => {
     if (!id) return;
@@ -133,20 +134,42 @@ export default function PropertyDetails() {
     setBooking(true);
     setError('');
     try {
-      await apiSend('/api/visits', 'POST', {
-        listing_id: selectedListing,
-        student_id: user.id,
-        visit_date: visitDate,
-        visit_time: visitTime,
-        notes,
-        booking_fee: 50,
+      const response = await fetch('/api/visits', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          listing_id: selectedListing,
+          student_id: user.id,
+          visit_date: visitDate,
+          visit_time: visitTime,
+          notes,
+          booking_fee: 50,
+        }),
       });
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.error || 'Booking failed');
+      }
       setMessage('Visit booked successfully! Check your dashboard for details.');
       setShowBook(false);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Booking failed');
     } finally {
       setBooking(false);
+    }
+  };
+
+  // Fetch already-booked time slots when the user changes the selected date
+  const fetchBookedSlots = async (date: string) => {
+    if (!selectedListing || !date) return;
+    try {
+      const res = await fetch(`/api/visits?listing_id=${selectedListing}&visit_date=${date}&status=pending,confirmed`);
+      if (res.ok) {
+        const data = await res.json();
+        setBookedSlots(Array.isArray(data) ? data.map((v: {visit_time: string}) => v.visit_time) : []);
+      }
+    } catch {
+      setBookedSlots([]);
     }
   };
 
@@ -420,7 +443,10 @@ export default function PropertyDetails() {
                   type="date"
                   value={visitDate}
                   min={new Date().toISOString().slice(0, 10)}
-                  onChange={(e) => setVisitDate(e.target.value)}
+                  onChange={(e) => {
+                    setVisitDate(e.target.value);
+                    fetchBookedSlots(e.target.value);
+                  }}
                   className="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200"
                 />
               </div>
@@ -432,7 +458,9 @@ export default function PropertyDetails() {
                   className="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200"
                 >
                   {['10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00'].map((t) => (
-                    <option key={t} value={t}>{t}</option>
+                    <option key={t} value={t} disabled={bookedSlots.includes(t)}>
+                      {t}{bookedSlots.includes(t) ? ' — Booked' : ''}
+                    </option>
                   ))}
                 </select>
               </div>

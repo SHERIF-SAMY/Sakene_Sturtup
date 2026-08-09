@@ -5,11 +5,13 @@ import supabase from '../lib/supabase';
 import { signInWithGoogle } from '../lib/googleAuth';
 import { apiSend } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 
 export default function Login() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const { refreshProfile } = useAuth();
+  const { t } = useTranslation();
   const [mode, setMode] = useState<'login' | 'signup'>(params.get('mode') === 'signup' ? 'signup' : 'login');
   const [role, setRole] = useState<'student' | 'broker'>(params.get('role') === 'broker' ? 'broker' : 'student');
   const [email, setEmail] = useState('');
@@ -17,6 +19,7 @@ export default function Login() {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [phone, setPhone] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -39,10 +42,13 @@ export default function Login() {
         await refreshProfile();
         redirectFor(profile?.role);
       } else {
-        if (!firstName.trim()) throw new Error('First name is required');
+        if (!firstName.trim()) throw new Error(t('login.err_firstname'));
+        if (password.length < 8) throw new Error(t('login.err_password_length'));
+        if (password !== confirmPassword) throw new Error(t('login.err_password_match'));
         const { data, error: err } = await supabase.auth.signUp({ email, password });
         if (err) throw err;
         if (!data.user) throw new Error('Signup failed');
+        // Step 1: Create the base profile
         await apiSend('/api/profiles', 'POST', {
           id: data.user.id,
           email,
@@ -51,23 +57,31 @@ export default function Login() {
           phone,
           role,
         });
+        // Step 2 (for brokers): Create broker profile atomically — rollback on failure
         if (role === 'broker') {
           const slug = `${firstName}-${lastName || 'broker'}-${Date.now().toString(36)}`
             .toLowerCase()
             .replace(/[^a-z0-9-]/g, '-');
-          await apiSend('/api/brokers', 'POST', {
-            user_id: data.user.id,
-            company_name: `${firstName}'s Housing`,
-            bio: 'Student housing specialist',
-            experience_years: 1,
-            slug,
-          });
+          try {
+            await apiSend('/api/brokers', 'POST', {
+              user_id: data.user.id,
+              company_name: `${firstName}'s Housing`,
+              bio: 'Student housing specialist',
+              experience_years: 1,
+              slug,
+            });
+          } catch (brokerErr) {
+            // Rollback: Delete the created profile so the user isn't stuck in a broken state
+            await apiSend('/api/profiles', 'DELETE', { id: data.user.id }).catch(() => {});
+            await supabase.auth.signOut();
+            throw new Error('Failed to create broker profile. Please try again.');
+          }
         }
         await refreshProfile();
         redirectFor(role);
       }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Something went wrong');
+      setError(err instanceof Error ? err.message : t('login.err_generic'));
     } finally {
       setLoading(false);
     }
@@ -92,10 +106,10 @@ export default function Login() {
             <Building2 className="w-7 h-7" />
           </div>
           <h1 className="text-2xl font-bold text-slate-900">
-            {mode === 'login' ? 'Welcome back' : 'Join Agarly'}
+            {mode === 'login' ? t('login.welcome_back') : t('login.join')}
           </h1>
           <p className="text-slate-500 mt-1 text-sm">
-            {mode === 'login' ? 'Sign in to manage housing and visits' : 'Create your student or broker account'}
+            {mode === 'login' ? t('login.signin_desc') : t('login.signup_desc')}
           </p>
         </div>
 
@@ -111,7 +125,7 @@ export default function Login() {
                     role === r ? 'bg-white text-brand-700 shadow-sm' : 'text-slate-500'
                   }`}
                 >
-                  {r}
+                  {r === 'student' ? t('login.student') : t('login.broker')}
                 </button>
               ))}
             </div>
@@ -120,15 +134,18 @@ export default function Login() {
           <form onSubmit={handleSubmit} className="space-y-4">
             {mode === 'signup' && (
               <div className="grid grid-cols-2 gap-3">
-                <Field icon={User} placeholder="First name" value={firstName} onChange={setFirstName} required />
-                <Field icon={User} placeholder="Last name" value={lastName} onChange={setLastName} />
+                <Field icon={User} placeholder={t('login.first_name')} value={firstName} onChange={setFirstName} required />
+                <Field icon={User} placeholder={t('login.last_name')} value={lastName} onChange={setLastName} />
               </div>
             )}
             {mode === 'signup' && (
-              <Field icon={Phone} placeholder="Phone" value={phone} onChange={setPhone} type="tel" />
+              <Field icon={Phone} placeholder={t('login.phone')} value={phone} onChange={setPhone} type="tel" />
             )}
-            <Field icon={Mail} placeholder="Email" value={email} onChange={setEmail} type="email" required />
-            <Field icon={Lock} placeholder="Password" value={password} onChange={setPassword} type="password" required />
+            <Field icon={Mail} placeholder={t('login.email')} value={email} onChange={setEmail} type="email" required />
+            <Field icon={Lock} placeholder={t('login.password')} value={password} onChange={setPassword} type="password" required />
+            {mode === 'signup' && (
+              <Field icon={Lock} placeholder={t('login.confirm_password')} value={confirmPassword} onChange={setConfirmPassword} type="password" required />
+            )}
 
             {error && (
               <div className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-3 py-2">{error}</div>
@@ -139,13 +156,13 @@ export default function Login() {
               disabled={loading}
               className="w-full py-3 rounded-xl bg-brand-600 text-white font-semibold hover:bg-brand-700 disabled:opacity-60 transition"
             >
-              {loading ? 'Please wait...' : mode === 'login' ? 'Sign in' : 'Create account'}
+              {loading ? t('login.wait') : mode === 'login' ? t('login.signin') : t('login.create_account')}
             </button>
           </form>
 
           <div className="my-5 flex items-center gap-3 text-xs text-slate-400">
             <div className="flex-1 h-px bg-slate-200" />
-            or
+            {t('login.or')}
             <div className="flex-1 h-px bg-slate-200" />
           </div>
 
@@ -155,22 +172,22 @@ export default function Login() {
             className="w-full py-3 rounded-xl border border-slate-200 font-semibold text-slate-700 hover:bg-slate-50 flex items-center justify-center gap-2"
           >
             <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="" className="w-5 h-5" />
-            Continue with Google
+            {t('login.google')}
           </button>
 
           <p className="mt-6 text-center text-sm text-slate-500">
             {mode === 'login' ? (
               <>
-                New here?{' '}
+                {t('login.new_here')}{' '}
                 <button type="button" className="text-brand-600 font-semibold" onClick={() => setMode('signup')}>
-                  Create account
+                  {t('login.create_account')}
                 </button>
               </>
             ) : (
               <>
-                Already have an account?{' '}
+                {t('login.have_account')}{' '}
                 <button type="button" className="text-brand-600 font-semibold" onClick={() => setMode('login')}>
-                  Sign in
+                  {t('login.signin')}
                 </button>
               </>
             )}
@@ -178,7 +195,7 @@ export default function Login() {
         </div>
 
         <div className="mt-6 bg-white/70 border border-slate-100 rounded-2xl p-4">
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Demo accounts</p>
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">{t('login.demo_accounts')}</p>
           <div className="grid grid-cols-3 gap-2">
             {(['student', 'broker', 'admin'] as const).map((t) => (
               <button
@@ -191,11 +208,11 @@ export default function Login() {
               </button>
             ))}
           </div>
-          <p className="text-[11px] text-slate-400 mt-2 text-center">password: password123</p>
+          <p className="text-[11px] text-slate-400 mt-2 text-center">{t('login.demo_password')}</p>
         </div>
 
         <p className="text-center mt-6">
-          <Link to="/" className="text-sm text-slate-500 hover:text-brand-600">← Back to home</Link>
+          <Link to="/" className="text-sm text-slate-500 hover:text-brand-600">{t('login.back_home')}</Link>
         </p>
       </div>
     </div>

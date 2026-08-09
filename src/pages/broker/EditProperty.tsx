@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { apiGet, apiSend } from '../../lib/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { createClient } from '@supabase/supabase-js';
+import LoadingSpinner from '../../components/LoadingSpinner';
 
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL as string,
@@ -19,14 +20,15 @@ const IMAGE_PRESETS = [
   'https://images.unsplash.com/photo-1484154218962-a197022b5858?w=1200&q=80',
 ];
 
-export default function AddProperty() {
+export default function EditProperty() {
+  const { id } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [cities, setCities] = useState<Opt[]>([]);
   const [unis, setUnis] = useState<Opt[]>([]);
   const [amenities, setAmenities] = useState<Opt[]>([]);
-  const [brokerId, setBrokerId] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -44,24 +46,51 @@ export default function AddProperty() {
     bathrooms: '1',
     furnished: true,
     gender_allowed: 'any',
-    listing_type: 'private_room',
-    price: '4500',
-    deposit: '4500',
     amenityIds: [] as number[],
     images: [] as string[],
     coverIndex: 0,
+    price: '',
+    deposit: '',
   });
 
   useEffect(() => {
     apiGet<Opt[]>('/api/cities').then(setCities).catch(console.error);
     apiGet<Opt[]>('/api/universities').then(setUnis).catch(console.error);
     apiGet<Opt[]>('/api/amenities').then(setAmenities).catch(console.error);
-    if (user) {
-      apiGet<{ id: number }>(`/api/brokers?user_id=${user.id}`)
-        .then((b) => setBrokerId(b.id))
-        .catch(console.error);
-    }
-  }, [user]);
+  }, []);
+
+  useEffect(() => {
+    if (!id) return;
+    setLoading(true);
+    apiGet<any>(`/api/properties?id=${id}`)
+      .then((data) => {
+        setForm({
+          title: data.title || '',
+          description: data.description || '',
+          city_id: String(data.city_id || ''),
+          university_id: String(data.university_id || ''),
+          district: data.district || '',
+          address: data.address || '',
+          floor: String(data.floor || '0'),
+          area: String(data.area || '0'),
+          bedrooms: String(data.bedrooms || '1'),
+          bathrooms: String(data.bathrooms || '1'),
+          furnished: !!data.furnished,
+          gender_allowed: data.gender_allowed || 'any',
+          amenityIds: (data.property_amenities || []).map((a: any) => a.amenity_id),
+          images: (data.property_images || []).sort((a: any, b: any) => a.display_order - b.display_order).map((img: any) => img.image_url),
+          coverIndex: (data.property_images || []).findIndex((img: any) => img.is_cover) !== -1 ? (data.property_images || []).findIndex((img: any) => img.is_cover) : 0,
+          price: String((data.listings || [])[0]?.price || ''),
+          deposit: String((data.listings || [])[0]?.deposit || ''),
+        });
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error(err);
+        setError('Failed to load property');
+        setLoading(false);
+      });
+  }, [id]);
 
   const set = (k: string, v: string | boolean | number[]) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -85,12 +114,11 @@ export default function AddProperty() {
         // Do NOT fall back to blob:// URLs — they are temporary and will break for other users.
         setError(`Failed to upload image: ${uploadErr instanceof Error ? uploadErr.message : 'Unknown error'}. Please try again.`);
         setUploading(false);
-        return; // Stop upload process entirely on failure
+        return;
       }
     }
     setForm((f) => ({ ...f, images: [...f.images, ...newUrls] }));
     setUploading(false);
-    // reset input so same files can be re-selected
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -113,26 +141,23 @@ export default function AddProperty() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!brokerId || !user) {
-      setError('Broker profile not found');
+    if (!form.title || !form.city_id) {
+      setError('Title and city are required');
       return;
     }
-    if (!form.title || !form.city_id || !form.price) {
-      setError('Title, city, and price are required');
-      return;
-    }
-    if (Number(form.price) <= 0) {
+    if (form.price && Number(form.price) <= 0) {
       setError('Price must be a positive number');
       return;
     }
-    if (Number(form.deposit) < 0) {
+    if (form.deposit && Number(form.deposit) < 0) {
       setError('Deposit cannot be negative');
       return;
     }
     setSaving(true);
     setError('');
     try {
-      const prop = await apiSend<{ id: number }>('/api/properties', 'POST', {
+      await apiSend<{ id: number }>('/api/properties', 'PUT', {
+        id: Number(id),
         title: form.title,
         description: form.description,
         city_id: Number(form.city_id),
@@ -145,45 +170,28 @@ export default function AddProperty() {
         bathrooms: Number(form.bathrooms),
         furnished: form.furnished,
         gender_allowed: form.gender_allowed,
-        broker_id: brokerId,
-        owner_id: user.id,
-        status: 'active',
         amenities: form.amenityIds,
-        images: form.images.length ? form.images : [IMAGE_PRESETS[0]],
-        listings: [
-          {
-            listing_type: form.listing_type,
-            price: Number(form.price),
-            deposit: Number(form.deposit),
-            minimum_months: 1,
-          },
-        ],
-        rooms: (() => {
-          const bedroomCount = Math.max(1, Number(form.bedrooms));
-          const bedsPerRoom = form.listing_type === 'shared_bed' ? 2 : 1;
-          const bedLetters = ['A', 'B', 'C', 'D'];
-          return Array.from({ length: bedroomCount }, (_, roomIdx) => ({
-            name: bedroomCount === 1 ? 'Room 1' : `Room ${roomIdx + 1}`,
-            beds_count: bedsPerRoom,
-            gender: form.gender_allowed,
-            beds: Array.from({ length: bedsPerRoom }, (_, bedIdx) => ({
-              bed_number: bedLetters[bedIdx] ?? String(bedIdx + 1),
-              price: Number(form.price),
-            })),
-          }));
-        })(),
+        images: form.images.length ? form.images.map((url, idx) => ({
+            image_url: url,
+            is_cover: idx === form.coverIndex,
+            display_order: idx
+        })) : [{ image_url: IMAGE_PRESETS[0], is_cover: true, display_order: 0 }],
+        // Include price update in the request if provided
+        ...(form.price ? { price: Number(form.price), deposit: Number(form.deposit || 0) } : {}),
       });
-      navigate(`/properties/${prop.id}`);
+      navigate(`/properties/${id}`);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to create');
+      setError(err instanceof Error ? err.message : 'Failed to update');
     } finally {
       setSaving(false);
     }
   };
 
+  if (loading) return <LoadingSpinner />;
+
   return (
     <form onSubmit={submit} className="bg-white rounded-3xl border border-slate-100 p-6 space-y-5 max-w-3xl">
-      <h2 className="text-xl font-bold text-slate-900">Add property</h2>
+      <h2 className="text-xl font-bold text-slate-900">Edit property</h2>
 
       <Field label="Title" value={form.title} onChange={(v) => set('title', v)} required />
       <div>
@@ -207,15 +215,7 @@ export default function AddProperty() {
         <Field label="Bathrooms" value={form.bathrooms} onChange={(v) => set('bathrooms', v)} type="number" />
       </div>
 
-      <div className="grid sm:grid-cols-3 gap-4">
-        <div>
-          <label className="text-xs font-semibold text-slate-500 uppercase">Listing type</label>
-          <select value={form.listing_type} onChange={(e) => set('listing_type', e.target.value)} className="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200">
-            <option value="entire_apartment">Entire Apartment</option>
-            <option value="private_room">Private Room</option>
-            <option value="shared_bed">Shared Bed</option>
-          </select>
-        </div>
+      <div className="grid sm:grid-cols-2 gap-4">
         <div>
           <label className="text-xs font-semibold text-slate-500 uppercase">Gender</label>
           <select value={form.gender_allowed} onChange={(e) => set('gender_allowed', e.target.value)} className="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200">
@@ -231,7 +231,7 @@ export default function AddProperty() {
       </div>
 
       <div className="grid sm:grid-cols-2 gap-4">
-        <Field label="Monthly price (EGP)" value={form.price} onChange={(v) => set('price', v)} type="number" required />
+        <Field label="Monthly price (EGP)" value={form.price} onChange={(v) => set('price', v)} type="number" />
         <Field label="Deposit (EGP)" value={form.deposit} onChange={(v) => set('deposit', v)} type="number" />
       </div>
 
@@ -280,11 +280,9 @@ export default function AddProperty() {
             {form.images.map((url, idx) => (
               <div key={idx} className="relative group aspect-video rounded-xl overflow-hidden">
                 <img src={url} alt={`photo ${idx + 1}`} className="w-full h-full object-cover" />
-                {/* Cover badge */}
                 {idx === form.coverIndex && (
                   <span className="absolute top-1 left-1 bg-brand-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md">Cover</span>
                 )}
-                {/* Hover actions */}
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                   {idx !== form.coverIndex && (
                     <button
@@ -308,9 +306,6 @@ export default function AddProperty() {
               </div>
             ))}
           </div>
-        )}
-        {form.images.length > 0 && (
-          <p className="mt-1.5 text-xs text-slate-400">Hover on a photo to set it as cover or remove it.</p>
         )}
       </div>
 
@@ -337,7 +332,7 @@ export default function AddProperty() {
       {error && <p className="text-sm text-red-600">{error}</p>}
 
       <button type="submit" disabled={saving} className="px-6 py-3 rounded-xl bg-brand-600 text-white font-semibold disabled:opacity-60">
-        {saving ? 'Submitting…' : 'Submit for review'}
+        {saving ? 'Submitting…' : 'Submit changes for review'}
       </button>
     </form>
   );

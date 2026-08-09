@@ -1,18 +1,21 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Filter, SlidersHorizontal, X } from 'lucide-react';
 import { apiGet, apiSend } from '../lib/api';
 import ApartmentCard, { type PropertyCardData } from '../components/ApartmentCard';
 import LoadingSpinner from '../components/LoadingSpinner';
 import EmptyState from '../components/EmptyState';
 import { useAuth } from '../contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 
 type Uni = { id: number; name: string };
 type City = { id: number; name: string };
 
 export default function SearchPage() {
   const [params, setParams] = useSearchParams();
+  const navigate = useNavigate();
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [results, setResults] = useState<PropertyCardData[]>([]);
   const [unis, setUnis] = useState<Uni[]>([]);
   const [cities, setCities] = useState<City[]>([]);
@@ -68,7 +71,7 @@ export default function SearchPage() {
 
   const toggleFav = async (propertyId: number) => {
     if (!user) {
-      window.location.href = '/login';
+      navigate('/login');
       return;
     }
     const isFav = favIds.has(propertyId);
@@ -92,68 +95,68 @@ export default function SearchPage() {
   const FilterForm = (
     <div className="space-y-4">
       <div>
-        <label className="text-xs font-semibold text-slate-500 uppercase">Keyword</label>
+        <label className="text-xs font-semibold text-slate-500 uppercase">{t('search.keyword')}</label>
         <input
           value={filters.q}
           onChange={(e) => update('q', e.target.value)}
-          placeholder="District or title"
+          placeholder={t('search.keyword_placeholder')}
           className="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-sm outline-none focus:border-brand-500"
         />
       </div>
       <div>
-        <label className="text-xs font-semibold text-slate-500 uppercase">University</label>
+        <label className="text-xs font-semibold text-slate-500 uppercase">{t('search.university')}</label>
         <select
           value={filters.university_id}
           onChange={(e) => update('university_id', e.target.value)}
           className="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-sm"
         >
-          <option value="">Any</option>
+          <option value="">{t('search.any')}</option>
           {unis.map((u) => (
             <option key={u.id} value={u.id}>{u.name}</option>
           ))}
         </select>
       </div>
       <div>
-        <label className="text-xs font-semibold text-slate-500 uppercase">City</label>
+        <label className="text-xs font-semibold text-slate-500 uppercase">{t('search.city')}</label>
         <select
           value={filters.city_id}
           onChange={(e) => update('city_id', e.target.value)}
           className="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-sm"
         >
-          <option value="">Any</option>
+          <option value="">{t('search.any')}</option>
           {cities.map((c) => (
             <option key={c.id} value={c.id}>{c.name}</option>
           ))}
         </select>
       </div>
       <div>
-        <label className="text-xs font-semibold text-slate-500 uppercase">Listing type</label>
+        <label className="text-xs font-semibold text-slate-500 uppercase">{t('search.listing_type')}</label>
         <select
           value={filters.listing_type}
           onChange={(e) => update('listing_type', e.target.value)}
           className="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-sm"
         >
-          <option value="">Any</option>
-          <option value="entire_apartment">Entire Apartment</option>
-          <option value="private_room">Private Room</option>
-          <option value="shared_bed">Shared Bed</option>
+          <option value="">{t('search.any')}</option>
+          <option value="entire_apartment">{t('search.entire_apartment')}</option>
+          <option value="private_room">{t('search.private_room')}</option>
+          <option value="shared_bed">{t('search.shared_bed')}</option>
         </select>
       </div>
       <div>
-        <label className="text-xs font-semibold text-slate-500 uppercase">Gender</label>
+        <label className="text-xs font-semibold text-slate-500 uppercase">{t('search.gender')}</label>
         <select
           value={filters.gender}
           onChange={(e) => update('gender', e.target.value)}
           className="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-sm"
         >
-          <option value="">Any</option>
-          <option value="male">Male</option>
-          <option value="female">Female</option>
+          <option value="">{t('search.any')}</option>
+          <option value="male">{t('search.male')}</option>
+          <option value="female">{t('search.female')}</option>
         </select>
       </div>
       <div className="grid grid-cols-2 gap-2">
         <div>
-          <label className="text-xs font-semibold text-slate-500 uppercase">Min EGP</label>
+          <label className="text-xs font-semibold text-slate-500 uppercase">{t('search.min_price')}</label>
           <input
             type="number"
             value={filters.min_price}
@@ -162,7 +165,7 @@ export default function SearchPage() {
           />
         </div>
         <div>
-          <label className="text-xs font-semibold text-slate-500 uppercase">Max EGP</label>
+          <label className="text-xs font-semibold text-slate-500 uppercase">{t('search.max_price')}</label>
           <input
             type="number"
             value={filters.max_price}
@@ -178,7 +181,7 @@ export default function SearchPage() {
           onChange={(e) => update('furnished', e.target.checked ? 'true' : '')}
           className="rounded border-slate-300 text-brand-600"
         />
-        Furnished only
+        {t('search.furnished_only')}
       </label>
     </div>
   );
@@ -187,9 +190,9 @@ export default function SearchPage() {
     <div className="max-w-7xl mx-auto px-4 py-6 md:py-8">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Search housing</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-slate-900">{t('search.title')}</h1>
           <p className="text-slate-500 text-sm mt-1">
-            {loading ? 'Searching…' : `${results.length} properties found`}
+            {loading ? t('search.searching') : t('search.results', { count: results.length })}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -198,17 +201,17 @@ export default function SearchPage() {
             onChange={(e) => update('sort', e.target.value)}
             className="px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-sm font-medium"
           >
-            <option value="newest">Newest</option>
-            <option value="price_asc">Price: Low to High</option>
-            <option value="price_desc">Price: High to Low</option>
-            <option value="rating">Top rated</option>
+            <option value="newest">{t('search.sort_newest')}</option>
+            <option value="price_asc">{t('search.sort_price_asc')}</option>
+            <option value="price_desc">{t('search.sort_price_desc')}</option>
+            <option value="rating">{t('search.sort_rating')}</option>
           </select>
           <button
             type="button"
             onClick={() => setShowFilters(true)}
             className="md:hidden inline-flex items-center gap-2 px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-sm font-semibold"
           >
-            <SlidersHorizontal className="w-4 h-4" /> Filters
+            <SlidersHorizontal className="w-4 h-4" /> {t('search.filters')}
           </button>
         </div>
       </div>
@@ -217,7 +220,7 @@ export default function SearchPage() {
         <aside className="hidden lg:block">
           <div className="sticky top-24 bg-white border border-slate-100 rounded-2xl p-5 shadow-sm">
             <div className="flex items-center gap-2 mb-4 font-semibold text-slate-900">
-              <Filter className="w-4 h-4 text-brand-600" /> Filters
+              <Filter className="w-4 h-4 text-brand-600" /> {t('search.filters')}
             </div>
             {FilterForm}
           </div>
@@ -225,11 +228,11 @@ export default function SearchPage() {
 
         <div>
           {loading ? (
-            <LoadingSpinner label="Finding apartments…" />
+            <LoadingSpinner label={t('search.loading')} />
           ) : results.length === 0 ? (
             <EmptyState
-              title="No apartments found"
-              description="Try adjusting filters or searching a different university."
+              title={t('search.no_results_title')}
+              description={t('search.no_results_desc')}
             />
           ) : (
             <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-5">
@@ -251,7 +254,7 @@ export default function SearchPage() {
           <div className="absolute inset-0 bg-black/40" onClick={() => setShowFilters(false)} />
           <div className="absolute bottom-0 inset-x-0 bg-white rounded-t-3xl p-5 max-h-[85vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-lg">Filters</h3>
+              <h3 className="font-bold text-lg">{t('search.filters')}</h3>
               <button onClick={() => setShowFilters(false)} className="p-2 rounded-xl hover:bg-slate-100">
                 <X className="w-5 h-5" />
               </button>
@@ -261,7 +264,7 @@ export default function SearchPage() {
               onClick={() => setShowFilters(false)}
               className="mt-6 w-full py-3 rounded-xl bg-brand-600 text-white font-semibold"
             >
-              Show results
+              {t('search.show_results')}
             </button>
           </div>
         </div>

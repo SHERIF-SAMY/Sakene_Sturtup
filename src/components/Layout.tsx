@@ -4,7 +4,9 @@ import {
   LayoutDashboard, LogOut, Menu, X, Shield,
 } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
+import { useNotifications } from '../contexts/NotificationContext';
 
 function logo() {
   return (
@@ -19,9 +21,16 @@ function logo() {
 
 export default function Layout() {
   const { user, profile, signOut } = useAuth();
+  const { unreadCount } = useNotifications();
   const [open, setOpen] = useState(false);
   const location = useLocation();
+  const { t, i18n } = useTranslation();
   const hideMobileNav = location.pathname.startsWith('/login');
+
+  const toggleLanguage = () => {
+    const newLang = i18n.language === 'ar' ? 'en' : 'ar';
+    i18n.changeLanguage(newLang);
+  };
 
   const dashPath =
     profile?.role === 'admin'
@@ -37,19 +46,28 @@ export default function Layout() {
           {logo()}
 
           <nav className="hidden md:flex items-center gap-1">
-            <NavLink to="/" end className={navCls}>Home</NavLink>
-            <NavLink to="/search" className={navCls}>Search</NavLink>
-            {user && <NavLink to={dashPath} className={navCls}>Dashboard</NavLink>}
+            <NavLink to="/" end className={navCls}>{t('nav.home')}</NavLink>
+            <NavLink to="/search" className={navCls}>{t('nav.search')}</NavLink>
+            {user && <NavLink to={dashPath} className={navCls}>{t('nav.dashboard')}</NavLink>}
           </nav>
 
           <div className="hidden md:flex items-center gap-2">
+            <button
+              onClick={toggleLanguage}
+              className="px-3 py-1.5 rounded-xl font-medium text-sm text-slate-600 hover:bg-slate-100 transition-colors"
+            >
+              {i18n.language === 'ar' ? 'EN' : 'عربي'}
+            </button>
             {user ? (
               <>
                 <Link
                   to={profile?.role === 'student' ? '/dashboard/notifications' : dashPath}
-                  className="w-10 h-10 rounded-xl hover:bg-slate-100 flex items-center justify-center text-slate-600"
+                  className="w-10 h-10 rounded-xl hover:bg-slate-100 flex items-center justify-center text-slate-600 relative"
                 >
                   <Bell className="w-5 h-5" />
+                  {unreadCount > 0 && (
+                    <span className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-red-500 ring-2 ring-white" />
+                  )}
                 </Link>
                 <Link
                   to={profile?.role === 'student' ? '/dashboard/profile' : dashPath}
@@ -92,15 +110,21 @@ export default function Layout() {
 
         {open && (
           <div className="md:hidden border-t border-slate-100 bg-white px-4 py-3 space-y-1">
-            <Link to="/" onClick={() => setOpen(false)} className="block px-3 py-2.5 rounded-xl hover:bg-slate-50 font-medium">Home</Link>
-            <Link to="/search" onClick={() => setOpen(false)} className="block px-3 py-2.5 rounded-xl hover:bg-slate-50 font-medium">Search</Link>
+            <button
+              onClick={() => { toggleLanguage(); setOpen(false); }}
+              className="w-full text-start px-3 py-2.5 rounded-xl hover:bg-slate-50 font-medium text-brand-600"
+            >
+              {i18n.language === 'ar' ? 'Switch to English' : 'تغيير للغة العربية'}
+            </button>
+            <Link to="/" onClick={() => setOpen(false)} className="block px-3 py-2.5 rounded-xl hover:bg-slate-50 font-medium">{t('nav.home')}</Link>
+            <Link to="/search" onClick={() => setOpen(false)} className="block px-3 py-2.5 rounded-xl hover:bg-slate-50 font-medium">{t('nav.search')}</Link>
             {user ? (
               <>
-                <Link to={dashPath} onClick={() => setOpen(false)} className="block px-3 py-2.5 rounded-xl hover:bg-slate-50 font-medium">Dashboard</Link>
-                <button onClick={() => { signOut(); setOpen(false); }} className="w-full text-left px-3 py-2.5 rounded-xl hover:bg-slate-50 font-medium text-red-600">Sign out</button>
+                <Link to={dashPath} onClick={() => setOpen(false)} className="block px-3 py-2.5 rounded-xl hover:bg-slate-50 font-medium">{t('nav.dashboard')}</Link>
+                <button onClick={() => { signOut(); setOpen(false); }} className="w-full text-start px-3 py-2.5 rounded-xl hover:bg-slate-50 font-medium text-red-600">{t('nav.signout')}</button>
               </>
             ) : (
-              <Link to="/login" onClick={() => setOpen(false)} className="block px-3 py-2.5 rounded-xl bg-brand-600 text-white text-center font-semibold">Log in</Link>
+              <Link to="/login" onClick={() => setOpen(false)} className="block px-3 py-2.5 rounded-xl bg-brand-600 text-white text-center font-semibold">{t('nav.login')}</Link>
             )}
           </div>
         )}
@@ -113,14 +137,14 @@ export default function Layout() {
       {!hideMobileNav && (
         <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white border-t border-slate-200 safe-bottom">
           <div className="grid grid-cols-5 h-16">
-            <Tab to="/" icon={Home} label="Home" end />
-            <Tab to="/search" icon={Search} label="Search" />
-            <Tab to={user ? (profile?.role === 'student' ? '/dashboard/bookings' : dashPath) : '/login'} icon={CalendarDays} label="Bookings" />
-            <Tab to={user ? (profile?.role === 'student' ? '/dashboard/favorites' : dashPath) : '/login'} icon={Heart} label="Saved" />
+            <Tab to="/" icon={Home} label={t('nav.home')} end />
+            <Tab to="/search" icon={Search} label={t('nav.search')} />
+            <Tab to={user ? (profile?.role === 'student' ? '/dashboard/bookings' : dashPath) : '/login'} icon={CalendarDays} label={t('nav.bookings')} />
+            <Tab to={user ? (profile?.role === 'student' ? '/dashboard/favorites' : dashPath) : '/login'} icon={Heart} label={t('nav.saved')} />
             <Tab
               to={user ? (profile?.role === 'admin' ? '/admin' : profile?.role === 'broker' ? '/broker' : '/dashboard') : '/login'}
               icon={profile?.role === 'admin' ? Shield : profile?.role === 'broker' ? LayoutDashboard : User}
-              label="Profile"
+              label={t('nav.profile')}
             />
           </div>
         </nav>
@@ -131,26 +155,26 @@ export default function Layout() {
           <div>
             {logo()}
             <p className="mt-3 text-sm text-slate-500 leading-relaxed">
-              Student housing made simple. Find verified apartments, rooms, and beds near your university.
+              {t('nav.footer_desc')}
             </p>
           </div>
           <div>
-            <h4 className="font-semibold text-slate-900 mb-3">Explore</h4>
+            <h4 className="font-semibold text-slate-900 mb-3">{t('nav.footer_explore')}</h4>
             <div className="space-y-2 text-sm text-slate-600">
-              <Link to="/search" className="block hover:text-brand-600">Search housing</Link>
-              <Link to="/search?listing_type=private_room" className="block hover:text-brand-600">Private rooms</Link>
-              <Link to="/search?listing_type=shared_bed" className="block hover:text-brand-600">Shared beds</Link>
+              <Link to="/search" className="block hover:text-brand-600">{t('nav.footer_search')}</Link>
+              <Link to="/search?listing_type=private_room" className="block hover:text-brand-600">{t('nav.footer_private')}</Link>
+              <Link to="/search?listing_type=shared_bed" className="block hover:text-brand-600">{t('nav.footer_shared')}</Link>
             </div>
           </div>
           <div>
-            <h4 className="font-semibold text-slate-900 mb-3">For Brokers</h4>
+            <h4 className="font-semibold text-slate-900 mb-3">{t('nav.footer_brokers')}</h4>
             <div className="space-y-2 text-sm text-slate-600">
-              <Link to="/login?mode=signup&role=broker" className="block hover:text-brand-600">List your property</Link>
-              <Link to="/broker" className="block hover:text-brand-600">Broker dashboard</Link>
+              <Link to="/login?mode=signup&role=broker" className="block hover:text-brand-600">{t('nav.footer_list')}</Link>
+              <Link to="/broker" className="block hover:text-brand-600">{t('nav.footer_broker_dash')}</Link>
             </div>
           </div>
           <div>
-            <h4 className="font-semibold text-slate-900 mb-3">Company</h4>
+            <h4 className="font-semibold text-slate-900 mb-3">{t('nav.footer_company')}</h4>
             <div className="space-y-2 text-sm text-slate-600">
               <p>Cairo, Egypt</p>
               <p>hello@agarly.com</p>
@@ -158,7 +182,7 @@ export default function Layout() {
           </div>
         </div>
         <div className="border-t border-slate-100 py-4 text-center text-xs text-slate-400">
-          © {new Date().getFullYear()} Agarly. Student Housing Platform.
+          © {new Date().getFullYear()} Agarly. {t('nav.footer_copyright')}.
         </div>
       </footer>
     </div>

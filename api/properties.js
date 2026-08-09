@@ -64,8 +64,13 @@ export default async function handler(req, res) {
       let q = supabase.from('properties').select('*').order('created_at', { ascending: false });
 
       if (broker_id) q = q.eq('broker_id', broker_id);
-      if (status) q = q.eq('status', status);
-      else if (!broker_id) q = q.eq('status', 'active');
+      if (status === 'all') {
+        // No status filter — return every property (admin use only)
+      } else if (status) {
+        q = q.eq('status', status);
+      } else if (!broker_id) {
+        q = q.eq('status', 'active');
+      }
       if (featured === 'true') q = q.limit(6);
 
       const { data: properties, error } = await q;
@@ -122,7 +127,8 @@ export default async function handler(req, res) {
           university_id: university_id || null,
           broker_id,
           owner_id: owner_id || broker_id,
-          status: status || 'active',
+          status: 'pending',
+          rejection_reason: null,
         })
         .select()
         .single();
@@ -191,17 +197,52 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'PUT') {
-      const { id, amenities, images, ...rest } = req.body;
+      const { id, amenities, images, admin_action, rejection_reason, price, deposit, ...rest } = req.body;
       if (!id) return res.status(400).json({ error: 'id required' });
       const allowed = [
         'title', 'description', 'city_id', 'district', 'address', 'latitude', 'longitude',
         'floor', 'area', 'bedrooms', 'bathrooms', 'furnished', 'gender_allowed',
-        'university_id', 'status',
+        'university_id', 'status', 'rejection_reason'
       ];
       const payload = {};
       for (const k of allowed) if (rest[k] !== undefined) payload[k] = rest[k];
+      
+      // If a broker is editing their property, it must go back to pending
+      if (!admin_action) {
+        payload.status = 'pending';
+        payload.rejection_reason = null;
+      } else {
+        // Admin action can set rejection reason
+        if (rejection_reason !== undefined) payload.rejection_reason = rejection_reason;
+      }
+
       const { data, error } = await supabase.from('properties').update(payload).eq('id', id).select().single();
       if (error) throw error;
+
+      // Real-time Notification for property status change by Admin
+      if (admin_action && data.broker_id) {
+        // Need to get user_id of the broker to send notification
+        const { data: broker } = await supabase.from('broker_profiles').select('user_id').eq('id', data.broker_id).single();
+        if (broker?.user_id) {
+          if (payload.status === 'active') {
+            await supabase.from('notifications').insert({
+              user_id: broker.user_id,
+              title: 'Property Approved',
+              message: `Your property "${data.title}" has been approved and is now live.`,
+              type: 'property_approved',
+              is_read: false
+            });
+          } else if (payload.status === 'rejected') {
+            await supabase.from('notifications').insert({
+              user_id: broker.user_id,
+              title: 'Property Rejected',
+              message: `Your property "${data.title}" was rejected. Reason: ${payload.rejection_reason || 'See details'}`,
+              type: 'property_rejected',
+              is_read: false
+            });
+          }
+        }
+      }
 
       if (amenities) {
         await supabase.from('property_amenities').delete().eq('property_id', id);
@@ -219,10 +260,27 @@ export default async function handler(req, res) {
             images.map((url, i) => ({
               property_id: id,
               image_url: typeof url === 'string' ? url : url.image_url,
-              display_order: i,
-              is_cover: i === 0,
+              display_order: typeof url === 'object' ? url.display_order : i,
+              is_cover: typeof url === 'object' ? url.is_cover : i === 0,
             }))
           );
+        }
+      }
+
+      // Update listing price and deposit if provided
+      if (price !== undefined) {
+        const { data: listings } = await supabase
+          .from('listings')
+          .select('id')
+          .eq('property_id', id)
+          .eq('status', 'active')
+          .order('id', { ascending: true })
+          .limit(1);
+        if (listings && listings.length > 0) {
+          await supabase
+            .from('listings')
+            .update({ price: Number(price), deposit: deposit !== undefined ? Number(deposit) : undefined })
+            .eq('id', listings[0].id);
         }
       }
 

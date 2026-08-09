@@ -5,6 +5,7 @@ import {
   Search, ShieldCheck, CalendarCheck, QrCode, ArrowRight,
   GraduationCap, Star, MapPin, Sparkles,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { apiGet } from '../lib/api';
 import ApartmentCard, { type PropertyCardData } from '../components/ApartmentCard';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -13,6 +14,7 @@ type Uni = { id: number; name: string; cities?: { name: string } | null };
 
 export default function Landing() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [q, setQ] = useState('');
   const [uniId, setUniId] = useState('');
   const [unis, setUnis] = useState<Uni[]>([]);
@@ -51,13 +53,13 @@ export default function Landing() {
             className="max-w-3xl"
           >
             <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 text-sm font-medium mb-5">
-              <Sparkles className="w-4 h-4" /> Egypt's student housing platform
+              <Sparkles className="w-4 h-4" /> {t('landing.badge')}
             </span>
             <h1 className="text-4xl md:text-6xl font-bold leading-tight tracking-tight">
-              Find housing near your university in minutes
+              {t('landing.hero_title')}
             </h1>
             <p className="mt-4 text-lg md:text-xl text-blue-100 max-w-2xl">
-              Verified brokers. Real photos. Book a visit with one click. Agarly makes student living simple, safe, and fast.
+              {t('landing.hero_subtitle')}
             </p>
           </motion.div>
 
@@ -73,7 +75,7 @@ export default function Landing() {
               <input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder="Area, district, or keyword"
+                placeholder={t('landing.search_placeholder')}
                 className="w-full bg-transparent outline-none text-slate-800 placeholder:text-slate-400"
               />
             </div>
@@ -84,7 +86,7 @@ export default function Landing() {
                 onChange={(e) => setUniId(e.target.value)}
                 className="w-full bg-transparent outline-none text-slate-800"
               >
-                <option value="">All universities</option>
+                <option value="">{t('landing.all_universities')}</option>
                 {unis.map((u) => (
                   <option key={u.id} value={u.id}>{u.name}</option>
                 ))}
@@ -94,14 +96,14 @@ export default function Landing() {
               type="submit"
               className="px-6 py-3 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold flex items-center justify-center gap-2"
             >
-              Search <ArrowRight className="w-4 h-4" />
+              {t('landing.search_btn')} <ArrowRight className="w-4 h-4" />
             </button>
           </motion.form>
 
           <div className="mt-8 flex flex-wrap gap-6 text-sm text-blue-100">
-            <span className="flex items-center gap-2"><ShieldCheck className="w-4 h-4" /> Verified brokers</span>
-            <span className="flex items-center gap-2"><CalendarCheck className="w-4 h-4" /> Instant visit booking</span>
-            <span className="flex items-center gap-2"><QrCode className="w-4 h-4" /> QR broker pages</span>
+            <span className="flex items-center gap-2"><ShieldCheck className="w-4 h-4" /> {t('landing.feat_1')}</span>
+            <span className="flex items-center gap-2"><CalendarCheck className="w-4 h-4" /> {t('landing.feat_2')}</span>
+            <span className="flex items-center gap-2"><QrCode className="w-4 h-4" /> {t('landing.feat_3')}</span>
           </div>
         </div>
       </section>
@@ -109,10 +111,10 @@ export default function Landing() {
       <section className="max-w-7xl mx-auto px-4 -mt-10 relative z-10">
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { icon: GraduationCap, title: 'University-first', desc: 'Filter by campus and commute' },
-            { icon: ShieldCheck, title: 'Trusted listings', desc: 'Verified brokers & real reviews' },
-            { icon: CalendarCheck, title: 'Book visits fast', desc: 'Pick a slot and confirm' },
-            { icon: MapPin, title: 'Rooms & beds', desc: 'Entire flats, rooms, or shared beds' },
+            { icon: GraduationCap, title: t('landing.usp_1_title'), desc: t('landing.usp_1_desc') },
+            { icon: ShieldCheck, title: t('landing.usp_2_title'), desc: t('landing.usp_2_desc') },
+            { icon: CalendarCheck, title: t('landing.usp_3_title'), desc: t('landing.usp_3_desc') },
+            { icon: MapPin, title: t('landing.usp_4_title'), desc: t('landing.usp_4_desc') },
           ].map((f) => (
             <div key={f.title} className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
               <div className="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center mb-3">
@@ -128,10 +130,10 @@ export default function Landing() {
       <section className="max-w-7xl mx-auto px-4 py-16">
         <div className="flex items-end justify-between mb-6 gap-4">
           <div>
-            <h2 className="text-2xl md:text-3xl font-bold text-slate-900">Popular universities</h2>
-            <p className="text-slate-500 mt-1">Explore housing near top campuses</p>
+            <h2 className="text-2xl md:text-3xl font-bold text-slate-900">{t('landing.popular_unis')}</h2>
+            <p className="text-slate-500 mt-1">{t('landing.popular_unis_subtitle')}</p>
           </div>
-          <Link to="/search" className="text-sm font-semibold text-brand-600 hover:text-brand-700">View all</Link>
+          <Link to="/search" className="text-sm font-semibold text-brand-600 hover:text-brand-700">{t('landing.view_all')}</Link>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
           {unis.slice(0, 6).map((u) => (
@@ -154,10 +156,10 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex items-end justify-between mb-6">
             <div>
-              <h2 className="text-2xl md:text-3xl font-bold text-slate-900">Featured apartments</h2>
-              <p className="text-slate-500 mt-1">Hand-picked student-friendly listings</p>
+              <h2 className="text-2xl md:text-3xl font-bold text-slate-900">{t('landing.featured_apartments')}</h2>
+              <p className="text-slate-500 mt-1">{t('landing.featured_apartments_subtitle')}</p>
             </div>
-            <Link to="/search" className="text-sm font-semibold text-brand-600">See more</Link>
+            <Link to="/search" className="text-sm font-semibold text-brand-600">{t('landing.see_more')}</Link>
           </div>
           {loading ? (
             <LoadingSpinner />
@@ -172,12 +174,12 @@ export default function Landing() {
       </section>
 
       <section className="max-w-7xl mx-auto px-4 py-16">
-        <h2 className="text-2xl md:text-3xl font-bold text-center text-slate-900 mb-10">How it works</h2>
+        <h2 className="text-2xl md:text-3xl font-bold text-center text-slate-900 mb-10">{t('landing.how_it_works')}</h2>
         <div className="grid md:grid-cols-3 gap-6">
           {[
-            { step: '01', title: 'Search by university', desc: 'Filter by campus, budget, room type, and amenities.' },
-            { step: '02', title: 'Book a visit', desc: 'Choose a date and time. Pay a small booking fee and get confirmation.' },
-            { step: '03', title: 'Move in with confidence', desc: 'Meet verified brokers, review the place, and secure your bed or room.' },
+            { step: '01', title: t('landing.step_1_title'), desc: t('landing.step_1_desc') },
+            { step: '02', title: t('landing.step_2_title'), desc: t('landing.step_2_desc') },
+            { step: '03', title: t('landing.step_3_title'), desc: t('landing.step_3_desc') },
           ].map((s) => (
             <div key={s.step} className="rounded-3xl border border-slate-100 bg-white p-6 relative overflow-hidden">
               <span className="text-5xl font-black text-brand-50 absolute -top-1 right-4">{s.step}</span>
@@ -191,8 +193,8 @@ export default function Landing() {
       <section className="max-w-7xl mx-auto px-4 pb-16">
         <div className="rounded-3xl bg-slate-900 text-white p-8 md:p-12 grid md:grid-cols-2 gap-8 items-center">
           <div>
-            <h2 className="text-2xl md:text-3xl font-bold">Students love Agarly</h2>
-            <p className="mt-3 text-slate-300">Real stories from students who found housing faster and safer.</p>
+            <h2 className="text-2xl md:text-3xl font-bold">{t('landing.testimonials_title')}</h2>
+            <p className="mt-3 text-slate-300">{t('landing.testimonials_subtitle')}</p>
             <div className="mt-6 flex gap-1">
               {Array.from({ length: 5 }).map((_, i) => (
                 <Star key={i} className="w-5 h-5 fill-amber-400 text-amber-400" />

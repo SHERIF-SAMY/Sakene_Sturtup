@@ -1,0 +1,199 @@
+# Visit Booking Workflow — Full Redesign
+
+## Overview
+
+Redesign the booking flow from a simple "click and confirm" model to a **multi-step, payment-verified, admin-moderated** workflow with WhatsApp integration.
+
+---
+
+## New Workflow (Step by Step)
+
+```mermaid
+sequenceDiagram
+    participant S as Student
+    participant P as Platform
+    participant A as Admin
+    participant B as Broker
+
+    S->>P: 1. Browse properties & choose listing type
+    S->>P: 2. Select visit date/time
+    P->>S: 3. Show InstaPay link + 100 EGP deposit info
+    S->>P: 4. Upload payment screenshot
+    P->>A: 5. Notification: new visit request + screenshot
+    A->>A: 6. Verify payment screenshot
+    alt Payment OK
+        A->>P: 7a. Approve → status: admin_approved
+        P->>B: 8. Notify broker (platform + WhatsApp)
+        B->>P: 9. Accept visit → status: confirmed
+        P->>S: 10. WhatsApp confirmation to student
+    else Payment Bad
+        A->>P: 7b. Reject → status: payment_rejected
+        P->>S: Notify student to re-upload
+    end
+```
+
+---
+
+## Visit Status Flow
+
+| Status | Meaning |
+|---|---|
+| `awaiting_payment` | Student created request, hasn't uploaded screenshot yet |
+| `payment_uploaded` | Student uploaded screenshot, waiting for admin |
+| `admin_approved` | Admin verified payment, forwarded to broker |
+| `payment_rejected` | Admin rejected the screenshot |
+| `confirmed` | Broker accepted the visit |
+| `completed` | Visit done |
+| `cancelled` | Cancelled by student/broker |
+| `no_show` | Student didn't show up |
+
+---
+
+## Proposed Changes
+
+### Phase 1: Database Schema Changes
+
+#### [MODIFY] `supabase_schema.sql` + Run SQL in Supabase
+- **Alter `visits` table**:
+  - Add `payment_screenshot_url` (text, nullable) — stores uploaded screenshot
+  - Change `booking_fee` default from 50 to 100
+  - Expand `status` check constraint to include the new statuses: `awaiting_payment`, `payment_uploaded`, `admin_approved`, `payment_rejected`
+  - Add `admin_notes` (text, nullable) — admin can leave a note when rejecting payment
+  - Add `instapay_ref` (text, nullable) — optional InstaPay reference number from student
+
+> [!IMPORTANT]
+> SQL to run in Supabase:
+> ```sql
+> ALTER TABLE visits DROP CONSTRAINT IF EXISTS visits_status_check;
+> ALTER TABLE visits ADD CONSTRAINT visits_status_check 
+>   CHECK (status IN ('awaiting_payment','payment_uploaded','admin_approved','payment_rejected','pending','confirmed','completed','cancelled','no_show'));
+> ALTER TABLE visits ADD COLUMN IF NOT EXISTS payment_screenshot_url text;
+> ALTER TABLE visits ADD COLUMN IF NOT EXISTS admin_notes text;
+> ALTER TABLE visits ADD COLUMN IF NOT EXISTS instapay_ref text;
+> ALTER TABLE visits ALTER COLUMN booking_fee SET DEFAULT 100;
+> ```
+
+---
+
+### Phase 2: Backend API Changes
+
+#### [MODIFY] `api/visits.js`
+- **POST (Create Visit)**: Student creates visit with status `awaiting_payment` (NOT `pending`). No notification to broker yet.
+- **PUT — New action: `upload_screenshot`**: Student uploads screenshot URL → status becomes `payment_uploaded` → notify Admin.
+- **PUT — New action: `admin_verify_payment`**: 
+  - If approved → status `admin_approved` → notify Broker (platform notification) → send WhatsApp to Broker via WhatsApp API link.
+  - If rejected → status `payment_rejected` → notify Student.
+- **PUT — action: `broker_accept`**: Broker accepts → status `confirmed` → send WhatsApp confirmation to Student.
+
+#### [NEW] `api/upload.js` (or modify existing)
+- Handle screenshot file upload (multipart form) and return the URL. Store in `/uploads/screenshots/` directory.
+
+---
+
+### Phase 3: Frontend — Student Booking Flow
+
+#### [MODIFY] `src/pages/PropertyDetails.tsx`
+Redesign the booking modal into a **multi-step wizard**:
+
+**Step 1 — Choose Listing Type** (already exists, keep as-is)
+Select bed/room/apartment.
+
+**Step 2 — Choose Date & Time** (already exists, keep as-is)
+Pick visit date and time slot.
+
+**Step 3 — Payment Instructions** (NEW)
+- Show InstaPay details:
+  - InstaPay number/name (from `.env`: `VITE_INSTAPAY_NUMBER`)
+  - Amount: 100 EGP
+  - Note: "This deposit is deducted from the broker commission"
+- Big CTA button: "I've paid, upload screenshot →"
+
+**Step 4 — Upload Screenshot** (NEW)
+- File upload input for the screenshot
+- Optional: InstaPay reference number field
+- Submit button → calls API with `upload_screenshot` action
+- Shows success message: "Your request has been sent to admin for verification"
+
+#### [MODIFY] `src/pages/student/Bookings.tsx`
+- Show the new statuses with proper colors and Arabic/English labels:
+  - `awaiting_payment` → "في انتظار الدفع" (yellow)
+  - `payment_uploaded` → "تم الرفع - في انتظار التأكيد" (blue)
+  - `admin_approved` → "تمت الموافقة - في انتظار السمسار" (purple)
+  - `payment_rejected` → "رفض الدفع - أعد الرفع" (red)
+  - `confirmed` → "مؤكد" (green)
+- If status is `awaiting_payment`, show an "Upload Screenshot" button
+- If status is `payment_rejected`, show admin notes and "Re-upload" button
+
+---
+
+### Phase 4: Admin Dashboard — Payment Verification
+
+#### [NEW] `src/pages/admin/AdminVisitRequests.tsx`
+New admin page showing all visits with status `payment_uploaded`:
+- Shows: Student name, phone, property title, date/time, screenshot image (clickable to enlarge)
+- Two action buttons: **Approve** and **Reject** (with rejection reason input)
+- On Approve: triggers backend to notify broker + opens WhatsApp compose link
+- On Reject: triggers backend to notify student
+
+#### [MODIFY] `src/pages/admin/AdminDashboard.tsx`
+- Add "Visit Requests" tab/link to the sidebar navigation
+
+#### [MODIFY] `src/App.tsx`
+- Add route: `/admin/visits` → `AdminVisitRequests`
+
+---
+
+### Phase 5: Broker Side — Accept Visit
+
+#### [MODIFY] `src/pages/broker/BrokerVisits.tsx`
+- Only show visits with status `admin_approved` or later (NOT `awaiting_payment` or `payment_uploaded`)
+- "Accept" button changes status to `confirmed`
+- On accept, triggers WhatsApp message to student
+
+---
+
+### Phase 6: WhatsApp Integration
+
+#### How it works
+We use **WhatsApp Click-to-Chat URLs** (`https://wa.me/{phone}?text={message}`). This opens WhatsApp on the admin's phone with a pre-filled message. No API key needed.
+
+**When admin approves payment:**
+→ Open `https://wa.me/{broker_phone}?text=مرحبًا, عندك طلب زيارة جديد...` with all the visit details.
+
+**When broker confirms visit:**
+→ Open `https://wa.me/{student_phone}?text=تم تأكيد زيارتك...` with visit details.
+
+> [!NOTE]
+> This approach uses "click-to-chat" links, not a WhatsApp Business API. The admin/broker clicks the link and WhatsApp opens with the message pre-filled. This is free and requires no API key. If you want fully automated messages (no click needed), we would need the WhatsApp Business API which costs money.
+
+---
+
+### Phase 7: Environment Variables
+
+#### [MODIFY] `.env`
+```
+VITE_INSTAPAY_NUMBER=01XXXXXXXXX
+VITE_INSTAPAY_NAME=Agarly
+VITE_ADMIN_WHATSAPP=2001XXXXXXXXX
+VITE_VISIT_FEE=100
+```
+
+---
+
+## Open Questions
+
+> [!IMPORTANT]
+> 1. **InstaPay details**: What is the InstaPay number and name that students should transfer to?
+> 2. **Admin WhatsApp number**: What is the admin's WhatsApp number (with country code, e.g., `2001012345678`)?
+> 3. **Automated vs Click-to-Chat**: Should WhatsApp messages be fully automated (requires WhatsApp Business API — paid) or click-to-chat links (free, admin clicks to send)?
+> 4. **Screenshot storage**: Should screenshots be stored on the local server (`/uploads/`) or on Supabase Storage?
+
+---
+
+## Verification Plan
+
+### Manual Testing
+1. **Student flow**: Create a visit → see "awaiting payment" → upload screenshot → see "payment uploaded"
+2. **Admin flow**: See visit request with screenshot → approve → WhatsApp link opens to broker
+3. **Broker flow**: See approved visit → accept → WhatsApp link opens to student
+4. **Rejection flow**: Admin rejects → student sees rejection reason → re-uploads screenshot

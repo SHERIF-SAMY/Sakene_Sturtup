@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Heart, MapPin, BedDouble, BadgeCheck, Star } from 'lucide-react';
 import { formatPrice, listingTypeLabel } from '../lib/api';
+import { useTranslation } from 'react-i18next';
 
 export type PropertyCardData = {
   id: number;
@@ -48,6 +49,7 @@ export default function ApartmentCard({
 }) {
   const price = lowestPrice(property);
   const type = primaryType(property);
+  const { t } = useTranslation();
 
   return (
     <article className="group bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
@@ -99,35 +101,35 @@ export default function ApartmentCard({
           <MapPin className="w-3.5 h-3.5 shrink-0" />
           <span className="line-clamp-1">
             {property.district || property.cities?.name}
-            {property.universities?.name ? ` · near ${property.universities.name}` : ''}
+            {property.universities?.name ? ` · ${t('card.near')} ${property.universities.name}` : ''}
           </span>
         </div>
 
         <div className="mt-3 flex items-center gap-3 text-xs text-slate-500">
           <span className="inline-flex items-center gap-1">
             <BedDouble className="w-3.5 h-3.5" />
-            {(property.listings || []).filter((l) => l.status === 'active').length} listing(s)
+            {(property.listings || []).filter((l) => l.status === 'active').length} {t('card.listings')}
           </span>
           {property.broker_profiles?.verified_badge && (
             <span className="inline-flex items-center gap-1 text-brand-600 font-medium">
-              <BadgeCheck className="w-3.5 h-3.5" /> Verified
+              <BadgeCheck className="w-3.5 h-3.5" /> {t('card.verified')}
             </span>
           )}
         </div>
 
         <div className="mt-4 flex items-center justify-between gap-3">
           <div>
-            <p className="text-xs text-slate-400">From</p>
+            <p className="text-xs text-slate-400">{t('card.from')}</p>
             <p className="text-lg font-bold text-slate-900">
               {price != null ? formatPrice(price) : '—'}
-              <span className="text-xs font-medium text-slate-400">/mo</span>
+              <span className="text-xs font-medium text-slate-400">{t('card.per_month')}</span>
             </p>
           </div>
           <Link
             to={`/properties/${property.id}`}
             className="px-4 py-2.5 rounded-xl bg-brand-600 text-white text-sm font-semibold hover:bg-brand-700 transition"
           >
-            View
+            {t('card.view')}
           </Link>
         </div>
       </div>

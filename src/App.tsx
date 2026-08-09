@@ -1,6 +1,8 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
+import { NotificationProvider } from './contexts/NotificationContext';
 import { handleGoogleRedirect } from './lib/googleAuth';
+import NotificationToast from './components/NotificationToast';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 import Landing from './pages/Landing';
@@ -35,9 +37,11 @@ handleGoogleRedirect();
 export default function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route element={<Layout />}>
+      <NotificationProvider>
+        <BrowserRouter>
+          <NotificationToast />
+          <Routes>
+            <Route element={<Layout />}>
             <Route index element={<Landing />} />
             <Route path="search" element={<SearchPage />} />
             <Route path="properties/:id" element={<PropertyDetails />} />
@@ -97,6 +101,7 @@ export default function App() {
           </Route>
         </Routes>
       </BrowserRouter>
-    </AuthProvider>
-  );
+    </NotificationProvider>
+  </AuthProvider>
+);
 }

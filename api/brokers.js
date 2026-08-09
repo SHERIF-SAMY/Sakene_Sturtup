@@ -63,7 +63,6 @@ export default async function handler(req, res) {
           response_rate: 100,
           response_time: '1 hour',
           verified_badge: false,
-          qr_code: slug,
           slug,
         })
         .select()
@@ -72,9 +71,8 @@ export default async function handler(req, res) {
       await supabase.from('profiles').update({ role: 'broker' }).eq('id', user_id);
       await supabase.from('qr_codes').insert({
         broker_id: data.id,
-        property_id: null,
-        code_type: 'broker',
-        code_value: slug,
+        code: slug,
+        url: `${process.env.VITE_SUPABASE_URL || ''}/b/${slug}`,
         scan_count: 0,
       });
       return res.status(201).json(data);
