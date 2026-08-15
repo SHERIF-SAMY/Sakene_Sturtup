@@ -15,6 +15,10 @@
   --color-brand-900: #1e3a8a;
 }
 
+/* Tailwind v4: configure dark mode to use .dark class on <html> */
+@variant dark (&:where(.dark, .dark *));
+
+
 html {
   scroll-behavior: smooth;
 }
@@ -24,6 +28,38 @@ body {
   background: #f8fafc;
   color: #0f172a;
   -webkit-font-smoothing: antialiased;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* ======================== Dark Mode ======================== */
+html.dark body {
+  background: #0f172a;
+  color: #e2e8f0;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+/* Dark mode scrollbar */
+html.dark ::-webkit-scrollbar-thumb {
+  background: #334155;
+}
+
+html.dark ::-webkit-scrollbar-track {
+  background: #1e293b;
+}
+
+/* ======================== Tailwind Dark Compatibility ======================== */
+/* Ensure dark: classes work via html.dark selector */
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  .dark {
+    color-scheme: dark;
+  }
 }
 
 #root {
@@ -45,6 +81,11 @@ body {
   animation: shimmer 1.4s infinite;
 }
 
+html.dark .skeleton {
+  background: linear-gradient(90deg, #1e293b 25%, #253447 50%, #1e293b 75%);
+  background-size: 200% 100%;
+}
+
 @layer base {
   :root {
     --font-sans: 'Inter', system-ui, sans-serif;
@@ -62,4 +103,16 @@ body {
 @keyframes shimmer {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
+}
+
+/* Dark mode transition smoothing */
+*, *::before, *::after {
+  transition-property: background-color, border-color, color;
+  transition-duration: 0.2s;
+  transition-timing-function: ease;
+}
+
+/* Override transition for animations to not be affected */
+.animate-spin, .animate-pulse, .animate-bounce {
+  transition: none;
 }

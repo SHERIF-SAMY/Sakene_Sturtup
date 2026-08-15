@@ -25,9 +25,7 @@ export default function BrokerProperties() {
     if (!user) return;
     setLoading(true);
     try {
-      const b = await apiGet<{ id: number }>(`/api/brokers?user_id=${user.id}`);
-      setBrokerId(b.id);
-      const props = await apiGet<Prop[]>(`/api/properties?broker_id=${b.id}`);
+      const props = await apiGet<Prop[]>(`/api/properties?user_id=${user.id}&status=all`);
       setItems(props);
     } catch (e) {
       console.error(e);
@@ -80,13 +78,19 @@ export default function BrokerProperties() {
                 <p className="text-sm font-medium text-brand-700">
                   from {price ? formatPrice(price) : '—'}
                 </p>
-                <span className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize ${
-                  p.status === 'active' ? 'bg-green-100 text-green-700' :
-                  p.status === 'pending' ? 'bg-amber-100 text-amber-700' :
-                  p.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                <span className={`text-xs px-2.5 py-0.5 rounded-full font-bold capitalize ${
+                  p.status === 'active' ? 'bg-green-100 text-green-800' :
+                  p.status === 'pending' ? 'bg-amber-100 text-amber-800 font-extrabold' :
+                  p.status === 'inactive' ? 'bg-slate-100 text-slate-800 font-bold' :
+                  p.status === 'archived' ? 'bg-purple-100 text-purple-800' :
+                  p.status === 'rejected' ? 'bg-red-100 text-red-800' :
                   'bg-slate-100 text-slate-700'
                 }`}>
-                  {p.status}
+                  {p.status === 'active' ? 'نشطة ومتاحة' :
+                   p.status === 'pending' ? 'قيد مراجعة الأدمن' :
+                   p.status === 'inactive' ? 'موقوفة مؤقتاً' :
+                   p.status === 'archived' ? 'مؤرشفة' :
+                   p.status === 'rejected' ? 'مرفوضة' : p.status}
                 </span>
               </div>
               {p.status === 'rejected' && p.rejection_reason && (
@@ -96,22 +100,27 @@ export default function BrokerProperties() {
               )}
             </div>
             <div className="flex flex-col gap-1 shrink-0">
+              {['archived', 'inactive', 'rejected'].includes(p.status) && (
+                <button
+                  onClick={() => setStatus(p.id, 'pending')}
+                  className="text-xs font-bold px-3 py-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm transition"
+                >
+                  إعادة العرض للتأجير 🔄
+                </button>
+              )}
               {p.status === 'active' && (
                 <button onClick={() => setStatus(p.id, 'inactive')} className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200">
-                  Pause
+                  إيقاف مؤقت
                 </button>
               )}
-              {p.status === 'inactive' && (
-                <button onClick={() => setStatus(p.id, 'active')} className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-brand-50 text-brand-700 hover:bg-brand-100">
-                  Activate
-                </button>
-              )}
-              <Link to={`/broker/edit/${p.id}`} className="text-xs font-semibold px-3 py-1.5 rounded-lg text-slate-600 bg-slate-50 text-center hover:bg-slate-100">
-                Edit
+              <Link to={`/broker/edit/${p.id}`} className="text-xs font-semibold px-3 py-1.5 rounded-lg text-slate-600 bg-slate-50 text-center hover:bg-slate-100 border border-slate-200">
+                تعديل
               </Link>
-              <button onClick={() => setStatus(p.id, 'archived')} className="text-xs font-semibold px-3 py-1.5 rounded-lg text-red-600 hover:bg-red-50">
-                Archive
-              </button>
+              {p.status !== 'archived' && (
+                <button onClick={() => setStatus(p.id, 'archived')} className="text-xs font-semibold px-3 py-1.5 rounded-lg text-red-600 hover:bg-red-50">
+                  أرشفة
+                </button>
+              )}
             </div>
           </div>
         );

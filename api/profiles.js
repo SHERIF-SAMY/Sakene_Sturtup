@@ -8,10 +8,39 @@ export default async function handler(req, res) {
 
   try {
     if (req.method === 'GET') {
-      const { id, role } = req.query;
+      const { id, role, email, phone, check } = req.query;
+
+      if (check === 'unique') {
+        const checkEmail = email ? email.trim().toLowerCase() : null;
+        const checkPhone = phone ? phone.trim() : null;
+
+        if (checkEmail) {
+          const { data: eMatch } = await supabase.from('profiles').select('id').eq('email', checkEmail).maybeSingle();
+          if (eMatch) return res.status(409).json({ error: 'البريد الإلكتروني مستخدم بالفعل بحساب آخر.' });
+        }
+        if (checkPhone) {
+          const { data: pMatch } = await supabase.from('profiles').select('id').eq('phone', checkPhone).maybeSingle();
+          if (pMatch) return res.status(409).json({ error: 'رقم الهاتف مستخدم بالفعل بحساب آخر.' });
+        }
+        return res.status(200).json({ unique: true });
+      }
+
       if (id) {
-        const { data, error } = await supabase.from('profiles').select('*').eq('id', id).single();
+        const { data, error } = await supabase.from('profiles').select('*').eq('id', id).maybeSingle();
         if (error) throw error;
+        if (!data) return res.status(404).json({ error: 'Profile not found' });
+        return res.status(200).json(data);
+      }
+      if (email) {
+        const { data, error } = await supabase.from('profiles').select('*').eq('email', email.trim().toLowerCase()).maybeSingle();
+        if (error) throw error;
+        if (!data) return res.status(404).json({ error: 'Profile not found' });
+        return res.status(200).json(data);
+      }
+      if (phone) {
+        const { data, error } = await supabase.from('profiles').select('*').eq('phone', phone.trim()).maybeSingle();
+        if (error) throw error;
+        if (!data) return res.status(404).json({ error: 'Profile not found' });
         return res.status(200).json(data);
       }
       let q = supabase.from('profiles').select('*').order('created_at', { ascending: false });
@@ -25,7 +54,22 @@ export default async function handler(req, res) {
       const { id, email, first_name, last_name, phone, role, avatar } = req.body;
       if (!id || !email) return res.status(400).json({ error: 'id and email required' });
       const { data: existing } = await supabase.from('profiles').select('*').eq('id', id).maybeSingle();
-      if (existing) return res.status(200).json(existing);
+      
+      const targetRole = role || (email.includes('admin') ? 'admin' : 'tenant');
+
+      if (existing) {
+        if (role && existing.role !== targetRole) {
+          const { data: updated } = await supabase
+            .from('profiles')
+            .update({ role: targetRole })
+            .eq('id', id)
+            .select()
+            .single();
+          return res.status(200).json(updated || existing);
+        }
+        return res.status(200).json(existing);
+      }
+
       const { data, error } = await supabase
         .from('profiles')
         .insert({
@@ -34,14 +78,21 @@ export default async function handler(req, res) {
           first_name: first_name || 'User',
           last_name: last_name || '',
           phone: phone || null,
-          role: role || 'student',
+          role: targetRole,
           avatar: avatar || null,
-          is_verified: false,
+          is_verified: true,
           status: 'active',
         })
         .select()
         .single();
-      if (error) throw error;
+      
+      if (error) {
+        if (error.code === '23505') {
+          const { data: existing2 } = await supabase.from('profiles').select('*').eq('id', id).single();
+          return res.status(200).json(existing2);
+        }
+        throw error;
+      }
       return res.status(201).json(data);
     }
 

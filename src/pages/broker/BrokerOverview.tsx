@@ -61,20 +61,20 @@ export default function BrokerOverview() {
       </div>
 
       <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        <StatCard icon={Building2} label="Properties" value={stats?.properties || 0} sub={`${stats?.activeProperties || 0} active`} />
-        <StatCard icon={CalendarDays} label="Visits" value={stats?.visits || 0} sub={`${stats?.pendingVisits || 0} pending`} />
-        <StatCard icon={Star} label="Avg rating" value={stats?.avgRating || 0} sub={`${stats?.reviews || 0} reviews`} />
-        <StatCard icon={QrCode} label="QR scans" value={stats?.qrScans || 0} sub={`${stats?.conversionRate || 0}% conversion`} />
+        <StatCard icon={Building2} label="العقارات" value={stats?.properties || 0} sub={`${stats?.activeProperties || 0} نشط`} />
+        <StatCard icon={Star} label="متوسط التقييم" value={stats?.avgRating || 0} sub={`${stats?.reviews || 0} تقييم`} />
+        <StatCard icon={QrCode} label="مسحات QR" value={stats?.qrScans || 0} sub={`${stats?.conversionRate || 0}% التحويل`} />
+        <StatCard icon={TrendingUp} label="إجمالي الحجوزات" value={stats?.visits || 0} sub={`${stats?.completedVisits || 0} مكتمل`} />
       </div>
 
       <div className="bg-white rounded-2xl border border-slate-100 p-6">
         <div className="flex items-center gap-2 font-bold text-slate-900 mb-4">
-          <TrendingUp className="w-5 h-5 text-brand-600" /> Visit pipeline
+          <TrendingUp className="w-5 h-5 text-brand-600" /> متابعة الطلبات والحجوزات
         </div>
         <div className="grid grid-cols-3 gap-3">
-          <Pipe label="Pending" value={stats?.pendingVisits || 0} color="bg-amber-500" />
-          <Pipe label="Confirmed" value={stats?.confirmedVisits || 0} color="bg-brand-500" />
-          <Pipe label="Completed" value={stats?.completedVisits || 0} color="bg-emerald-500" />
+          <Pipe label="قيد الانتظار" value={stats?.pendingVisits || 0} color="bg-amber-500" />
+          <Pipe label="مؤكدة" value={stats?.confirmedVisits || 0} color="bg-brand-500" />
+          <Pipe label="مكتملة" value={stats?.completedVisits || 0} color="bg-emerald-500" />
         </div>
       </div>
     </div>

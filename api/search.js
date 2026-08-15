@@ -10,9 +10,20 @@ export default async function handler(req, res) {
     if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
     const {
-      q, university_id, city_id, gender, listing_type,
-      min_price, max_price, furnished, sort = 'newest',
+      q, university_id, city_id, district, gender, listing_type,
+      min_price, max_price, furnished, for_students, sort = 'newest', districts: fetchDistricts,
     } = req.query;
+
+    if (fetchDistricts === 'true') {
+      const { data: props } = await supabase
+        .from('properties')
+        .select('district')
+        .eq('status', 'active');
+      const uniqueDistricts = Array.from(
+        new Set((props || []).map((p) => p.district?.trim()).filter(Boolean))
+      ).sort();
+      return res.status(200).json(uniqueDistricts);
+    }
 
     let query = supabase
       .from('properties')
@@ -23,14 +34,17 @@ export default async function handler(req, res) {
         property_images(image_url, is_cover, display_order),
         listings(id, listing_type, price, status, deposit),
         broker_profiles:broker_id(company_name, verified_badge, rating, slug),
-        property_amenities(amenity_id)
+        property_amenities(amenity_id),
+        rooms(id, name, beds_count, beds(id, status))
       `)
       .eq('status', 'active');
 
     if (university_id) query = query.eq('university_id', university_id);
     if (city_id) query = query.eq('city_id', city_id);
+    if (district) query = query.eq('district', district);
     if (gender && gender !== 'any') query = query.in('gender_allowed', [gender, 'any']);
     if (furnished === 'true') query = query.eq('furnished', true);
+    if (for_students === 'true') query = query.eq('for_students', true);
     if (q) query = query.or(`title.ilike.%${q}%,district.ilike.%${q}%,description.ilike.%${q}%`);
 
     if (sort === 'newest') query = query.order('created_at', { ascending: false });
@@ -40,6 +54,31 @@ export default async function handler(req, res) {
     if (error) throw error;
 
     let results = data || [];
+
+    // Enrich results with available beds count
+    results = results.map((p) => {
+      let availableBeds = 0;
+      if (p.rooms && p.rooms.length > 0) {
+        p.rooms.forEach((r) => {
+          if (r.beds) {
+            availableBeds += r.beds.filter((b) => b.status === 'available').length;
+          }
+        });
+      }
+      return {
+        ...p,
+        available_beds_count: availableBeds,
+      };
+    });
+
+    // For shared beds, we exclude properties that have 0 available beds
+    results = results.filter((p) => {
+      const isSharedBed = (p.listings || []).some((l) => l.listing_type === 'shared_bed' && l.status === 'active');
+      if (isSharedBed && p.available_beds_count === 0) {
+        return false;
+      }
+      return true;
+    });
 
     if (listing_type) {
       results = results.filter((p) =>
@@ -72,8 +111,14 @@ export default async function handler(req, res) {
         const pb = Math.min(...(b.listings || []).map((l) => l.price).concat([0]));
         return pb - pa;
       });
-    } else if (sort === 'rating') {
-      results.sort((a, b) => (b.broker_profiles?.rating || 0) - (a.broker_profiles?.rating || 0));
+    } else {
+      // Highest rating first, then newest registered by default
+      results.sort((a, b) => {
+        const rA = Number(a.rating_avg || a.broker_profiles?.rating || 0);
+        const rB = Number(b.rating_avg || b.broker_profiles?.rating || 0);
+        if (rB !== rA) return rB - rA;
+        return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+      });
     }
 
     return res.status(200).json(results);

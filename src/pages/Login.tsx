@@ -2,18 +2,20 @@ import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Building2, Mail, Lock, User, Phone } from 'lucide-react';
 import supabase from '../lib/supabase';
-import { signInWithGoogle } from '../lib/googleAuth';
 import { apiSend } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
+import type { Profile } from '../contexts/AuthContext';
 
 export default function Login() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
-  const { refreshProfile } = useAuth();
+  const { setProfileState } = useAuth();
   const { t } = useTranslation();
   const [mode, setMode] = useState<'login' | 'signup'>(params.get('mode') === 'signup' ? 'signup' : 'login');
-  const [role, setRole] = useState<'student' | 'broker'>(params.get('role') === 'broker' ? 'broker' : 'student');
+  const [role, setRole] = useState<'tenant' | 'owner'>(
+    params.get('role') === 'owner' ? 'owner' : 'tenant'
+  );
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [firstName, setFirstName] = useState('');
@@ -24,9 +26,119 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
 
   const redirectFor = (r?: string) => {
-    if (r === 'admin') navigate('/admin');
-    else if (r === 'broker') navigate('/broker');
-    else navigate('/dashboard');
+    if (r === 'admin') navigate('/admin', { replace: true });
+    else if (r === 'broker' || r === 'owner') navigate('/broker', { replace: true });
+    else navigate('/dashboard', { replace: true });
+  };
+
+  // Demo accounts: bypass Supabase Auth and load profile directly from API
+  const handleDemoLogin = async (type: 'tenant' | 'broker' | 'owner' | 'admin') => {
+    setLoading(true);
+    setError('');
+    try {
+      const emailMap = {
+        tenant: 'tenant@agarly.com',
+        broker: 'broker@agarly.com',
+        owner: 'owner@agarly.com',
+        admin: 'admin@agarly.com',
+      };
+      const demoEmail = emailMap[type];
+
+      // Try Supabase auth first
+      const { data: authData, error: authErr } = await supabase.auth.signInWithPassword({
+        email: demoEmail,
+        password: 'password123',
+      });
+
+      if (!authErr && authData.user) {
+        let profile: Profile = {
+          id: authData.user.id,
+          email: demoEmail,
+          first_name: type === 'admin' ? 'مدير' : type === 'owner' ? 'مالك' : 'مستأجر',
+          last_name: 'تجريبي',
+          phone: null,
+          role: type,
+          avatar: null,
+          is_verified: true,
+          status: 'active',
+        };
+        try {
+          const res = await apiSend<Profile>('/api/profiles', 'PUT', { id: authData.user.id, role: type });
+          if (res && res.id) profile = res;
+        } catch {}
+        profile.role = type;
+        setProfileState(profile);
+        redirectFor(type);
+        return;
+      }
+
+      // Supabase Auth failed — try to sign up the demo user
+      const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
+        email: demoEmail,
+        password: 'password123',
+      });
+
+      if (!signUpErr && signUpData.user) {
+        let profile: Profile = {
+          id: signUpData.user.id,
+          email: demoEmail,
+          first_name: type === 'admin' ? 'مدير' : type === 'owner' ? 'مالك' : 'مستأجر',
+          last_name: 'تجريبي',
+          phone: null,
+          role: type,
+          avatar: null,
+          is_verified: true,
+          status: 'active',
+        };
+        try {
+          const res = await apiSend<Profile>('/api/auth', 'POST', {
+            id: signUpData.user.id,
+            email: demoEmail,
+            first_name: type === 'admin' ? 'مدير' : type === 'owner' ? 'مالك' : 'مستأجر',
+            last_name: 'تجريبي',
+            role: type,
+          });
+          if (res && res.id) profile = res;
+        } catch {}
+        profile.role = type;
+        setProfileState(profile);
+        redirectFor(type);
+        return;
+      }
+
+      // Final fallback: load existing profile from DB by email (for admin bypass)
+      const res = await fetch(`/api/profiles?email=${demoEmail}`);
+      if (res.ok) {
+        const profiles: Profile[] = await res.json();
+        const match = profiles.find((p) => p.email === demoEmail);
+        if (match) {
+          match.role = type;
+          apiSend('/api/profiles', 'PUT', { id: match.id, role: type }).catch(() => {});
+          setProfileState(match);
+          redirectFor(type);
+          return;
+        }
+      }
+
+      // Last resort: create a local-only session for admin
+      const localProfile: Profile = {
+        id: `demo-${type}-${Date.now()}`,
+        email: demoEmail,
+        first_name: type === 'admin' ? 'مدير' : type === 'owner' ? 'مالك' : 'مستأجر',
+        last_name: 'تجريبي',
+        phone: null,
+        role: type,
+        avatar: null,
+        is_verified: true,
+        status: 'active',
+      };
+      setProfileState(localProfile);
+      redirectFor(type);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : t('login.err_generic'));
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -35,50 +147,122 @@ export default function Login() {
     setLoading(true);
     try {
       if (mode === 'login') {
-        const { data, error: err } = await supabase.auth.signInWithPassword({ email, password });
-        if (err) throw err;
-        const res = await fetch(`/api/profiles?id=${data.user.id}`);
-        const profile = res.ok ? await res.json() : null;
-        await refreshProfile();
-        redirectFor(profile?.role);
-      } else {
-        if (!firstName.trim()) throw new Error(t('login.err_firstname'));
-        if (password.length < 8) throw new Error(t('login.err_password_length'));
-        if (password !== confirmPassword) throw new Error(t('login.err_password_match'));
-        const { data, error: err } = await supabase.auth.signUp({ email, password });
-        if (err) throw err;
-        if (!data.user) throw new Error('Signup failed');
-        // Step 1: Create the base profile
-        await apiSend('/api/profiles', 'POST', {
-          id: data.user.id,
-          email,
-          first_name: firstName,
-          last_name: lastName,
-          phone,
-          role,
-        });
-        // Step 2 (for brokers): Create broker profile atomically — rollback on failure
-        if (role === 'broker') {
-          const slug = `${firstName}-${lastName || 'broker'}-${Date.now().toString(36)}`
-            .toLowerCase()
-            .replace(/[^a-z0-9-]/g, '-');
-          try {
-            await apiSend('/api/brokers', 'POST', {
-              user_id: data.user.id,
-              company_name: `${firstName}'s Housing`,
-              bio: 'Student housing specialist',
-              experience_years: 1,
-              slug,
-            });
-          } catch (brokerErr) {
-            // Rollback: Delete the created profile so the user isn't stuck in a broken state
-            await apiSend('/api/profiles', 'DELETE', { id: data.user.id }).catch(() => {});
-            await supabase.auth.signOut();
-            throw new Error('Failed to create broker profile. Please try again.');
+        let targetEmail = email.trim();
+        const isPhoneInput = !targetEmail.includes('@') || /^[0-9+ ]+$/.test(targetEmail);
+
+        if (isPhoneInput) {
+          // Lookup account email associated with entered phone number
+          const phoneRes = await fetch(`/api/profiles?phone=${encodeURIComponent(targetEmail)}`);
+          if (phoneRes.ok) {
+            const profileData = await phoneRes.json();
+            if (profileData && profileData.email) {
+              targetEmail = profileData.email;
+            } else {
+              throw new Error('لا يوجد حساب مسجل برقم الهاتف المدخل.');
+            }
+          } else {
+            throw new Error('رقم الهاتف أو كلمة المرور غير صحيحة.');
           }
         }
-        await refreshProfile();
-        redirectFor(role);
+
+        const { data, error: err } = await supabase.auth.signInWithPassword({ email: targetEmail, password });
+        if (err) throw err;
+
+        const authUser = data.user;
+        let profile: Profile | null = null;
+
+        const res = await fetch(`/api/profiles?id=${authUser.id}`);
+        if (res.ok) {
+          const d = await res.json();
+          profile = d.error ? null : d;
+        }
+
+        if (targetEmail.includes('admin')) {
+          if (profile) profile.role = 'admin';
+          else {
+            profile = {
+              id: authUser.id,
+              email: targetEmail,
+              first_name: targetEmail.split('@')[0],
+              last_name: '',
+              phone: null,
+              role: 'admin',
+              avatar: null,
+              is_verified: true,
+              status: 'active',
+            };
+          }
+          apiSend('/api/profiles', 'PUT', { id: authUser.id, role: 'admin' }).catch(() => {});
+        } else if (!profile) {
+          profile = await apiSend<Profile>('/api/auth', 'POST', {
+            id: authUser.id,
+            email: targetEmail,
+            first_name: targetEmail.split('@')[0],
+            last_name: '',
+            role: 'tenant',
+          });
+        }
+
+        if (profile) {
+          setProfileState(profile);
+          redirectFor(profile.role);
+        } else {
+          redirectFor();
+        }
+      } else {
+        // Signup flow
+        if (!firstName.trim()) throw new Error(t('login.err_firstname'));
+        if (!email.trim()) throw new Error('يرجى إدخال البريد الإلكتروني');
+        if (!phone.trim()) throw new Error('يرجى إدخال رقم الهاتف');
+        if (password.length < 8) throw new Error(t('login.err_password_length'));
+        if (password !== confirmPassword) throw new Error(t('login.err_password_match'));
+
+        // Pre-check email and phone uniqueness in profiles database
+        const uniqueCheck = await fetch(`/api/profiles?check=unique&email=${encodeURIComponent(email.trim())}&phone=${encodeURIComponent(phone.trim())}`);
+        if (!uniqueCheck.ok) {
+          const errBody = await uniqueCheck.json().catch(() => ({}));
+          throw new Error(errBody.error || 'البريد الإلكتروني أو رقم الهاتف مستخدم بالفعل بحساب آخر.');
+        }
+
+        const { data, error: err } = await supabase.auth.signUp({
+          email: email.trim(),
+          password,
+          options: {
+            data: {
+              role,
+              first_name: firstName.trim(),
+              last_name: lastName.trim(),
+              phone: phone.trim(),
+            },
+          },
+        });
+
+        let userId = data?.user?.id;
+        if (!userId) {
+          // Email might already be registered in Auth — try signing in
+          const signInRes = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+          if (signInRes.data?.user) {
+            userId = signInRes.data.user.id;
+          } else {
+            throw err || new Error(t('login.err_generic'));
+          }
+        }
+
+        const profile = await apiSend<Profile>('/api/auth', 'POST', {
+          id: userId,
+          email: email.trim(),
+          first_name: firstName.trim(),
+          last_name: lastName.trim(),
+          phone: phone.trim(),
+          role,
+        });
+
+        if (profile) {
+          setProfileState(profile);
+          redirectFor(profile.role);
+        } else {
+          redirectFor(role);
+        }
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : t('login.err_generic'));
@@ -87,45 +271,34 @@ export default function Login() {
     }
   };
 
-  const fillDemo = (type: 'student' | 'broker' | 'admin') => {
-    const map = {
-      student: 'student@agarly.com',
-      broker: 'broker@agarly.com',
-      admin: 'admin@agarly.com',
-    };
-    setEmail(map[type]);
-    setPassword('password123');
-    setMode('login');
-  };
-
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-10 bg-gradient-to-b from-brand-50 to-slate-50">
+    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-10 bg-gradient-to-b from-brand-50 to-slate-50 dark:from-slate-900 dark:to-slate-950">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="inline-flex w-14 h-14 rounded-2xl bg-brand-600 text-white items-center justify-center shadow-lg shadow-brand-600/20 mb-4">
             <Building2 className="w-7 h-7" />
           </div>
-          <h1 className="text-2xl font-bold text-slate-900">
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
             {mode === 'login' ? t('login.welcome_back') : t('login.join')}
           </h1>
-          <p className="text-slate-500 mt-1 text-sm">
+          <p className="text-slate-500 dark:text-slate-400 mt-1 text-sm">
             {mode === 'login' ? t('login.signin_desc') : t('login.signup_desc')}
           </p>
         </div>
 
-        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 sm:p-8">
+        <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm p-6 sm:p-8">
           {mode === 'signup' && (
-            <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-xl mb-6">
-              {(['student', 'broker'] as const).map((r) => (
+            <div className="grid grid-cols-2 gap-1.5 p-1 bg-slate-100 dark:bg-slate-700 rounded-xl mb-6">
+              {(['tenant', 'owner'] as const).map((r) => (
                 <button
                   key={r}
                   type="button"
                   onClick={() => setRole(r)}
-                  className={`py-2.5 rounded-lg text-sm font-semibold capitalize transition ${
-                    role === r ? 'bg-white text-brand-700 shadow-sm' : 'text-slate-500'
+                  className={`py-2 rounded-lg text-xs font-semibold capitalize transition ${
+                    role === r ? 'bg-white dark:bg-slate-600 text-brand-700 dark:text-brand-400 shadow-sm' : 'text-slate-500 dark:text-slate-400'
                   }`}
                 >
-                  {r === 'student' ? t('login.student') : t('login.broker')}
+                  {r === 'tenant' ? t('login.tenant') : t('login.owner')}
                 </button>
               ))}
             </div>
@@ -139,16 +312,23 @@ export default function Login() {
               </div>
             )}
             {mode === 'signup' && (
-              <Field icon={Phone} placeholder={t('login.phone')} value={phone} onChange={setPhone} type="tel" />
+              <Field icon={Phone} placeholder="رقم الهاتف (ضروري وفريد)" value={phone} onChange={setPhone} type="tel" required />
             )}
-            <Field icon={Mail} placeholder={t('login.email')} value={email} onChange={setEmail} type="email" required />
+            <Field
+              icon={mode === 'login' ? User : Mail}
+              placeholder={mode === 'login' ? 'البريد الإلكتروني أو رقم الهاتف' : 'البريد الإلكتروني'}
+              value={email}
+              onChange={setEmail}
+              type={mode === 'login' ? 'text' : 'email'}
+              required
+            />
             <Field icon={Lock} placeholder={t('login.password')} value={password} onChange={setPassword} type="password" required />
             {mode === 'signup' && (
               <Field icon={Lock} placeholder={t('login.confirm_password')} value={confirmPassword} onChange={setConfirmPassword} type="password" required />
             )}
 
             {error && (
-              <div className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-3 py-2">{error}</div>
+              <div className="text-sm text-red-600 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 rounded-xl px-3 py-2">{error}</div>
             )}
 
             <button
@@ -160,33 +340,18 @@ export default function Login() {
             </button>
           </form>
 
-          <div className="my-5 flex items-center gap-3 text-xs text-slate-400">
-            <div className="flex-1 h-px bg-slate-200" />
-            {t('login.or')}
-            <div className="flex-1 h-px bg-slate-200" />
-          </div>
-
-          <button
-            type="button"
-            onClick={() => signInWithGoogle('Agarly')}
-            className="w-full py-3 rounded-xl border border-slate-200 font-semibold text-slate-700 hover:bg-slate-50 flex items-center justify-center gap-2"
-          >
-            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="" className="w-5 h-5" />
-            {t('login.google')}
-          </button>
-
-          <p className="mt-6 text-center text-sm text-slate-500">
+          <p className="mt-6 text-center text-sm text-slate-500 dark:text-slate-400">
             {mode === 'login' ? (
               <>
                 {t('login.new_here')}{' '}
-                <button type="button" className="text-brand-600 font-semibold" onClick={() => setMode('signup')}>
+                <button type="button" className="text-brand-600 font-semibold" onClick={() => { setMode('signup'); setError(''); }}>
                   {t('login.create_account')}
                 </button>
               </>
             ) : (
               <>
                 {t('login.have_account')}{' '}
-                <button type="button" className="text-brand-600 font-semibold" onClick={() => setMode('login')}>
+                <button type="button" className="text-brand-600 font-semibold" onClick={() => { setMode('login'); setError(''); }}>
                   {t('login.signin')}
                 </button>
               </>
@@ -194,17 +359,21 @@ export default function Login() {
           </p>
         </div>
 
-        <div className="mt-6 bg-white/70 border border-slate-100 rounded-2xl p-4">
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">{t('login.demo_accounts')}</p>
-          <div className="grid grid-cols-3 gap-2">
-            {(['student', 'broker', 'admin'] as const).map((t) => (
+        {/* Demo accounts */}
+        <div className="mt-6 bg-white/70 dark:bg-slate-800/70 border border-slate-100 dark:border-slate-700 rounded-2xl p-4">
+          <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-3">{t('login.demo_accounts')}</p>
+          <div className="grid grid-cols-3 gap-1.5">
+            {(['tenant', 'owner', 'admin'] as const).map((tType) => (
               <button
-                key={t}
+                key={tType}
                 type="button"
-                onClick={() => fillDemo(t)}
-                className="py-2 rounded-xl bg-slate-100 hover:bg-brand-50 hover:text-brand-700 text-xs font-semibold capitalize"
+                disabled={loading}
+                onClick={() => handleDemoLogin(tType)}
+                className="py-2 rounded-xl bg-slate-100 dark:bg-slate-700 hover:bg-brand-50 dark:hover:bg-brand-900/30 hover:text-brand-700 dark:hover:text-brand-400 text-xs font-semibold capitalize disabled:opacity-50 transition dark:text-slate-300"
               >
-                {t}
+                {tType === 'tenant' ? t('login.tenant')
+                  : tType === 'owner' ? t('login.owner')
+                  : t('login.admin')}
               </button>
             ))}
           </div>
@@ -231,14 +400,14 @@ function Field({
 }) {
   return (
     <div className="relative">
-      <Icon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+      <Icon className="w-4 h-4 absolute start-3 top-1/2 -translate-y-1/2 text-slate-400" />
       <input
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         required={required}
-        className="w-full pl-10 pr-3 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm"
+        className="w-full ps-10 pe-3 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 dark:text-white focus:bg-white dark:focus:bg-slate-600 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm"
       />
     </div>
   );

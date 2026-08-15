@@ -1,4 +1,5 @@
 import supabase from './db-client.js';
+import { requireAuth } from './auth-helper.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -12,18 +13,38 @@ export default async function handler(req, res) {
     const { scope, broker_id, user_id } = req.query;
 
     if (scope === 'admin') {
-      const [users, properties, visits, universities, cities, reviews] = await Promise.all([
+      const auth = await requireAuth(req, res, ['admin', 'super_admin']);
+      if (!auth) return;
+
+      // Handle resetting stats if requested by super_admin
+      if (req.method === 'POST' || req.query.action === 'reset_earnings') {
+        if (auth.role !== 'super_admin') return res.status(403).json({ error: 'Super Admin only' });
+        const targetAdminId = req.query.admin_id;
+        let query = supabase.from('admin_earnings').delete();
+        if (targetAdminId) {
+          query = query.eq('admin_id', targetAdminId);
+        } else {
+          query = query.neq('id', 0); // Delete all
+        }
+        await query;
+        return res.status(200).json({ success: true, message: 'Earnings reset' });
+      }
+
+      const [users, properties, visits, universities, cities, reviews, adminProfiles, earningsData, completedVisitsData] = await Promise.all([
         supabase.from('profiles').select('id', { count: 'exact', head: true }),
         supabase.from('properties').select('id', { count: 'exact', head: true }),
         supabase.from('visits').select('id', { count: 'exact', head: true }),
         supabase.from('universities').select('id', { count: 'exact', head: true }),
         supabase.from('cities').select('id', { count: 'exact', head: true }),
         supabase.from('reviews').select('id', { count: 'exact', head: true }),
+        supabase.from('profiles').select('id, first_name, last_name, email, role').in('role', ['admin', 'super_admin']),
+        supabase.from('admin_earnings').select('*'),
+        supabase.from('visits').select('id, status, created_at, visit_date, processed_by_admin_id').eq('status', 'completed'),
       ]);
 
       const { data: recentVisits } = await supabase
         .from('visits')
-        .select('status, visit_date, created_at')
+        .select('status, visit_date, created_at, processed_by_admin_id')
         .order('created_at', { ascending: false })
         .limit(100);
 
@@ -31,6 +52,28 @@ export default async function handler(req, res) {
       const roles = { student: 0, broker: 0, admin: 0, owner: 0 };
       (roleCounts || []).forEach((r) => {
         if (roles[r.role] !== undefined) roles[r.role]++;
+      });
+
+      const completedVisits = completedVisitsData.data || [];
+      const totalCompletedVisits = completedVisits.length;
+      const totalRevenue = totalCompletedVisits * 400; // 400 EGP per completed visit
+
+      const earnings = earningsData.data || [];
+
+      // Calculate per-admin stats directly from completedVisits and admin_earnings
+      const adminStats = (adminProfiles.data || []).map(adm => {
+        const admCompletedVisits = completedVisits.filter(v => v.processed_by_admin_id === adm.id);
+        const admEarnings = earnings.filter(e => e.admin_id === adm.id);
+        const completedCount = Math.max(admCompletedVisits.length, admEarnings.length);
+        const totalEarnings = completedCount * 400;
+
+        return {
+          id: adm.id,
+          name: `${adm.first_name || ''} ${adm.last_name || ''}`.trim() || adm.email,
+          role: adm.role,
+          totalEarnings,
+          completedCount,
+        };
       });
 
       return res.status(200).json({
@@ -42,10 +85,17 @@ export default async function handler(req, res) {
         reviews: reviews.count || 0,
         roles,
         recentVisits: recentVisits || [],
+        completedVisits,
+        earnings,
+        totalCompletedVisits,
+        totalRevenue,
+        adminStats: adminStats || [],
       });
     }
 
     if (scope === 'broker' && broker_id) {
+      const auth = await requireAuth(req, res, ['broker', 'owner', 'admin', 'super_admin']);
+      if (!auth) return;
       const { data: props } = await supabase.from('properties').select('id, status').eq('broker_id', broker_id);
       const propIds = (props || []).map((p) => p.id);
 
@@ -89,6 +139,8 @@ export default async function handler(req, res) {
     }
 
     if (scope === 'student' && user_id) {
+      const auth = await requireAuth(req, res, ['student', 'tenant', 'admin', 'super_admin']);
+      if (!auth) return;
       const [fav, vis, notif] = await Promise.all([
         supabase.from('favorites').select('id', { count: 'exact', head: true }).eq('user_id', user_id),
         supabase.from('visits').select('*').eq('student_id', user_id),

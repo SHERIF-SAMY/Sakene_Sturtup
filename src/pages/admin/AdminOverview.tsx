@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Users, Building2, CalendarDays, GraduationCap, MapPin, Star } from 'lucide-react';
-import { apiGet } from '../../lib/api';
+import { Users, Building2, CalendarDays, MapPin, Star, TrendingUp } from 'lucide-react';
+import { apiGet, formatPrice } from '../../lib/api';
 import LoadingSpinner from '../../components/LoadingSpinner';
 
 type Stats = {
@@ -10,6 +10,8 @@ type Stats = {
   universities: number;
   cities: number;
   reviews: number;
+  totalCompletedVisits?: number;
+  totalRevenue?: number;
   roles: Record<string, number>;
 };
 
@@ -29,12 +31,21 @@ export default function AdminOverview() {
   return (
     <div className="space-y-6">
       <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
-        <Card icon={Users} label="Users" value={stats?.users || 0} />
-        <Card icon={Building2} label="Properties" value={stats?.properties || 0} />
-        <Card icon={CalendarDays} label="Visits" value={stats?.visits || 0} />
-        <Card icon={GraduationCap} label="Universities" value={stats?.universities || 0} />
-        <Card icon={MapPin} label="Cities" value={stats?.cities || 0} />
-        <Card icon={Star} label="Reviews" value={stats?.reviews || 0} />
+        <div className="bg-gradient-to-br from-emerald-600 to-teal-700 text-white rounded-2xl p-5 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div className="w-10 h-10 rounded-xl bg-white/20 text-white flex items-center justify-center">
+              <TrendingUp className="w-5 h-5" />
+            </div>
+            <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/40 font-bold">400 ج / عملية</span>
+          </div>
+          <p className="mt-4 text-3xl font-bold">{formatPrice(stats?.totalRevenue || 0)}</p>
+          <p className="text-xs text-emerald-100 mt-1">أرباح المنصة ({stats?.totalCompletedVisits || 0} عملية مكتملة)</p>
+        </div>
+        <Card icon={Users} label="المستخدمين" value={stats?.users || 0} />
+        <Card icon={Building2} label="العقارات" value={stats?.properties || 0} />
+        <Card icon={CalendarDays} label="الحجوزات الإجمالية" value={stats?.visits || 0} />
+        <Card icon={MapPin} label="المدن والمناطق" value={stats?.cities || 0} />
+        <Card icon={Star} label="التقييمات" value={stats?.reviews || 0} />
       </div>
 
       <div className="bg-white rounded-2xl border border-slate-100 p-6">

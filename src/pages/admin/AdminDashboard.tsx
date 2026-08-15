@@ -1,23 +1,31 @@
 import { NavLink, Outlet, Navigate } from 'react-router-dom';
 import {
-  LayoutDashboard, Users, Building2, GraduationCap, MapPin, BarChart3,
+  LayoutDashboard, Users, Building2, MapPin, BarChart3, CalendarDays, Bell, MessageSquare,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
 const links = [
-  { to: '/admin', end: true, icon: LayoutDashboard, label: 'Overview' },
-  { to: '/admin/users', icon: Users, label: 'Users' },
-  { to: '/admin/properties', icon: Building2, label: 'Properties' },
-  { to: '/admin/universities', icon: GraduationCap, label: 'Universities' },
-  { to: '/admin/cities', icon: MapPin, label: 'Cities' },
-  { to: '/admin/analytics', icon: BarChart3, label: 'Analytics' },
+  { to: '/admin', end: true, icon: LayoutDashboard, label: 'نظرة عامة' },
+  { to: '/admin/visits', icon: CalendarDays, label: 'الحجوزات 📋' },
+  { to: '/admin/users', icon: Users, label: 'المستخدمين' },
+  { to: '/admin/properties', icon: Building2, label: 'العقارات' },
+  { to: '/admin/cities', icon: MapPin, label: 'المدن والمناطق' },
+  { to: '/admin/analytics', icon: BarChart3, label: 'الإحصائيات والأرباح' },
+  { to: '/admin/notifications', icon: Bell, label: 'الإشعارات' },
+  { to: '/admin/inbox', icon: MessageSquare, label: 'صندوق الرسائل' },
 ];
 
 export default function AdminDashboard() {
   const { profile } = useAuth();
-  if (profile && profile.role !== 'admin') {
-    return <Navigate to={profile.role === 'broker' ? '/broker' : '/dashboard'} replace />;
+  if (profile && profile.role !== 'admin' && profile.role !== 'super_admin') {
+    return <Navigate to={profile.role === 'broker' || profile.role === 'owner' ? '/broker' : '/dashboard'} replace />;
   }
+
+  const navLinks = links.map((l) =>
+    l.to === '/admin/analytics'
+      ? { ...l, label: profile?.role === 'super_admin' ? 'الإحصائيات والأرباح' : 'الإحصائيات' }
+      : l
+  );
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6 md:py-8">
@@ -28,7 +36,7 @@ export default function AdminDashboard() {
       <div className="grid lg:grid-cols-[220px_1fr] gap-6">
         <aside className="hidden lg:block">
           <nav className="bg-white rounded-2xl border border-slate-100 p-2 sticky top-24 space-y-1">
-            {links.map((l) => (
+            {navLinks.map((l) => (
               <NavLink
                 key={l.to}
                 to={l.to}
@@ -46,7 +54,7 @@ export default function AdminDashboard() {
         </aside>
         <div className="min-w-0">
           <div className="lg:hidden flex gap-2 overflow-x-auto pb-3 mb-2">
-            {links.map((l) => (
+            {navLinks.map((l) => (
               <NavLink
                 key={l.to}
                 to={l.to}

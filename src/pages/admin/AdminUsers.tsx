@@ -89,9 +89,12 @@ export default function AdminUsers() {
           className="px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-sm"
         >
           <option value="">All roles</option>
+          <option value="tenant">Tenant</option>
           <option value="student">Student</option>
+          <option value="owner">Owner</option>
           <option value="broker">Broker</option>
           <option value="admin">Admin</option>
+          <option value="super_admin">Super Admin</option>
         </select>
       </div>
 
@@ -118,7 +121,24 @@ export default function AdminUsers() {
                     <p className="font-semibold text-slate-900">{u.first_name} {u.last_name}</p>
                     <p className="text-xs text-slate-500">{u.email}</p>
                   </td>
-                  <td className="px-4 py-3 capitalize">{u.role}</td>
+                  <td className="px-4 py-3">
+                    <select
+                      value={u.role}
+                      onChange={async (e) => {
+                        const newRole = e.target.value;
+                        await apiSend('/api/profiles', 'PUT', { id: u.id, role: newRole });
+                        load();
+                      }}
+                      className="px-2 py-1 rounded-lg border border-slate-200 text-xs font-semibold capitalize bg-slate-50"
+                    >
+                      <option value="tenant">tenant</option>
+                      <option value="student">student</option>
+                      <option value="owner">owner</option>
+                      <option value="broker">broker</option>
+                      <option value="admin">admin</option>
+                      <option value="super_admin">super_admin</option>
+                    </select>
+                  </td>
                   <td className="px-4 py-3 capitalize">{u.status}</td>
                   <td className="px-4 py-3">{u.is_verified ? 'Yes' : 'No'}</td>
                   <td className="px-4 py-3 space-x-2">

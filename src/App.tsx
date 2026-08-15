@@ -23,6 +23,7 @@ import BrokerProperties from './pages/broker/BrokerProperties';
 import BrokerVisits from './pages/broker/BrokerVisits';
 import BrokerQR from './pages/broker/BrokerQR';
 import AddProperty from './pages/broker/AddProperty';
+import EditProperty from './pages/broker/EditProperty';
 import BrokerSettings from './pages/broker/BrokerSettings';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminOverview from './pages/admin/AdminOverview';
@@ -31,8 +32,9 @@ import AdminProperties from './pages/admin/AdminProperties';
 import AdminUniversities from './pages/admin/AdminUniversities';
 import AdminCities from './pages/admin/AdminCities';
 import AdminAnalytics from './pages/admin/AdminAnalytics';
-
-handleGoogleRedirect();
+import AdminVisits from './pages/admin/AdminVisits';
+import AdminNotifications from './pages/admin/AdminNotifications';
+import AdminInbox from './pages/admin/AdminInbox';
 
 export default function App() {
   return (
@@ -50,7 +52,7 @@ export default function App() {
             <Route
               path="dashboard"
               element={
-                <ProtectedRoute roles={['student', 'owner']}>
+                <ProtectedRoute roles={['tenant', 'student']}>
                   <StudentDashboard />
                 </ProtectedRoute>
               }
@@ -72,9 +74,10 @@ export default function App() {
             >
               <Route index element={<BrokerOverview />} />
               <Route path="properties" element={<BrokerProperties />} />
-              <Route path="visits" element={<BrokerVisits />} />
+              <Route path="notifications" element={<Notifications />} />
               <Route path="qr" element={<BrokerQR />} />
               <Route path="add" element={<AddProperty />} />
+              <Route path="edit/:id" element={<EditProperty />} />
               <Route path="settings" element={<BrokerSettings />} />
             </Route>
 
@@ -84,7 +87,7 @@ export default function App() {
             <Route
               path="admin"
               element={
-                <ProtectedRoute roles={['admin']}>
+                <ProtectedRoute roles={['admin', 'super_admin']}>
                   <AdminDashboard />
                 </ProtectedRoute>
               }
@@ -95,6 +98,9 @@ export default function App() {
               <Route path="universities" element={<AdminUniversities />} />
               <Route path="cities" element={<AdminCities />} />
               <Route path="analytics" element={<AdminAnalytics />} />
+              <Route path="visits" element={<AdminVisits />} />
+              <Route path="notifications" element={<AdminNotifications />} />
+              <Route path="inbox" element={<AdminInbox />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />

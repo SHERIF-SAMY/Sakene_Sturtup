@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { apiGet, apiSend } from '../../lib/api';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 import { createClient } from '@supabase/supabase-js';
 import LoadingSpinner from '../../components/LoadingSpinner';
 
@@ -20,10 +21,31 @@ const IMAGE_PRESETS = [
   'https://images.unsplash.com/photo-1484154218962-a197022b5858?w=1200&q=80',
 ];
 
+const AMENITY_AR: Record<string, string> = {
+  'Wifi': 'واي فاي (إنترنت)',
+  'Wi-Fi': 'واي فاي (إنترنت)',
+  'Air Conditioning': 'تكييف',
+  'AC': 'تكييف',
+  'Elevator': 'مصعد (أسانسير)',
+  'Balcony': 'بلكونة (شرفة)',
+  'Parking': 'موقف سيارات (جراج)',
+  'Washing Machine': 'غسالة',
+  'Kitchen': 'مطبخ مجهز',
+  'TV': 'تلفزيون',
+  'Security': 'أمن وحراسة',
+  'Natural Gas': 'غاز طبيعي',
+  'Water Heater': 'سخان مياه',
+  'Refrigerator': 'ثلاجة',
+  'Microwave': 'ميكروويف',
+  'Furnished': 'مفروش بالكامل',
+};
+
 export default function EditProperty() {
   const { id } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
+  const isAr = i18n.language === 'ar';
   const [cities, setCities] = useState<Opt[]>([]);
   const [unis, setUnis] = useState<Opt[]>([]);
   const [amenities, setAmenities] = useState<Opt[]>([]);
@@ -32,6 +54,26 @@ export default function EditProperty() {
   const [error, setError] = useState('');
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [roomsConfig, setRoomsConfig] = useState<{ name: string; beds_count: number }[]>([]);
+
+  const totalBeds = roomsConfig.reduce((sum, r) => sum + Number(r.beds_count || 1), 0);
+
+  const handleBedroomsChange = (val: string) => {
+    const n = Math.max(1, parseInt(val) || 1);
+    set('bedrooms', String(n));
+    setRoomsConfig((prev) => {
+      const next = [...prev];
+      if (next.length < n) {
+        for (let i = next.length; i < n; i++) {
+          next.push({ name: `Room ${i + 1}`, beds_count: 1 });
+        }
+      } else if (next.length > n) {
+        next.splice(n);
+      }
+      return next;
+    });
+  };
 
   const [form, setForm] = useState({
     title: '',
@@ -43,14 +85,18 @@ export default function EditProperty() {
     floor: '1',
     area: '90',
     bedrooms: '2',
+    beds_count: '2',
     bathrooms: '1',
     furnished: true,
+    for_students: false,
+    tenant_type: 'all',
     gender_allowed: 'any',
     amenityIds: [] as number[],
     images: [] as string[],
     coverIndex: 0,
     price: '',
     deposit: '',
+    listing_type: '',
   });
 
   useEffect(() => {
@@ -74,15 +120,31 @@ export default function EditProperty() {
           floor: String(data.floor || '0'),
           area: String(data.area || '0'),
           bedrooms: String(data.bedrooms || '1'),
+          beds_count: String(data.beds_count || data.bedrooms || '1'),
           bathrooms: String(data.bathrooms || '1'),
           furnished: !!data.furnished,
+          for_students: !!data.for_students,
+          tenant_type: data.tenant_type || (data.for_students ? 'students' : 'all'),
           gender_allowed: data.gender_allowed || 'any',
           amenityIds: (data.property_amenities || []).map((a: any) => a.amenity_id),
           images: (data.property_images || []).sort((a: any, b: any) => a.display_order - b.display_order).map((img: any) => img.image_url),
           coverIndex: (data.property_images || []).findIndex((img: any) => img.is_cover) !== -1 ? (data.property_images || []).findIndex((img: any) => img.is_cover) : 0,
           price: String((data.listings || [])[0]?.price || ''),
           deposit: String((data.listings || [])[0]?.deposit || ''),
+          listing_type: String((data.listings || [])[0]?.listing_type || 'private_room'),
         });
+        if (data.rooms && data.rooms.length > 0) {
+          setRoomsConfig(data.rooms.map((r: any) => ({
+            name: r.name,
+            beds_count: r.beds_count || (r.beds ? r.beds.length : 1),
+          })));
+        } else {
+          const count = Math.max(1, data.bedrooms || 1);
+          setRoomsConfig(Array.from({ length: count }, (_, i) => ({
+            name: `Room ${i + 1}`,
+            beds_count: 1
+          })));
+        }
         setLoading(false);
       })
       .catch((err) => {
@@ -168,7 +230,10 @@ export default function EditProperty() {
         area: Number(form.area),
         bedrooms: Number(form.bedrooms),
         bathrooms: Number(form.bathrooms),
+        beds_count: totalBeds,
+        tenant_type: form.tenant_type,
         furnished: form.furnished,
+        for_students: form.tenant_type === 'students' || form.for_students,
         gender_allowed: form.gender_allowed,
         amenities: form.amenityIds,
         images: form.images.length ? form.images.map((url, idx) => ({
@@ -176,6 +241,19 @@ export default function EditProperty() {
             is_cover: idx === form.coverIndex,
             display_order: idx
         })) : [{ image_url: IMAGE_PRESETS[0], is_cover: true, display_order: 0 }],
+        rooms: roomsConfig.map((r, roomIdx) => {
+          const bedsPerRoom = Math.max(1, r.beds_count);
+          const bedLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
+          return {
+            name: r.name || `Room ${roomIdx + 1}`,
+            beds_count: bedsPerRoom,
+            gender: form.gender_allowed,
+            beds: Array.from({ length: bedsPerRoom }, (_, bedIdx) => ({
+              bed_number: bedLetters[bedIdx] ?? String(bedIdx + 1),
+              price: Number(form.price || 0),
+            })),
+          };
+        }),
         // Include price update in the request if provided
         ...(form.price ? { price: Number(form.price), deposit: Number(form.deposit || 0) } : {}),
       });
@@ -190,54 +268,114 @@ export default function EditProperty() {
   if (loading) return <LoadingSpinner />;
 
   return (
-    <form onSubmit={submit} className="bg-white rounded-3xl border border-slate-100 p-6 space-y-5 max-w-3xl">
-      <h2 className="text-xl font-bold text-slate-900">Edit property</h2>
+    <form onSubmit={submit} className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 p-6 space-y-5 max-w-3xl">
+      <h2 className="text-xl font-bold text-slate-900 dark:text-white">{t('broker.edit_property')}</h2>
 
-      <Field label="Title" value={form.title} onChange={(v) => set('title', v)} required />
+      <Field label={t('addProperty.property_title')} value={form.title} onChange={(v) => set('title', v)} required />
       <div>
-        <label className="text-xs font-semibold text-slate-500 uppercase">Description</label>
+        <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">{t('addProperty.description')}</label>
         <textarea
           value={form.description}
           onChange={(e) => set('description', e.target.value)}
           rows={4}
-          className="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200"
+          className="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-white"
         />
       </div>
 
       <div className="grid sm:grid-cols-2 gap-4">
-        <Select label="City" value={form.city_id} onChange={(v) => set('city_id', v)} options={cities} required />
-        <Select label="University" value={form.university_id} onChange={(v) => set('university_id', v)} options={unis} />
-        <Field label="District" value={form.district} onChange={(v) => set('district', v)} />
-        <Field label="Address" value={form.address} onChange={(v) => set('address', v)} />
-        <Field label="Floor" value={form.floor} onChange={(v) => set('floor', v)} type="number" />
-        <Field label="Area (m²)" value={form.area} onChange={(v) => set('area', v)} type="number" />
-        <Field label="Bedrooms" value={form.bedrooms} onChange={(v) => set('bedrooms', v)} type="number" />
-        <Field label="Bathrooms" value={form.bathrooms} onChange={(v) => set('bathrooms', v)} type="number" />
+        <Select label={t('addProperty.city')} value={form.city_id} onChange={(v) => set('city_id', v)} options={cities} required />
+        <Field label={t('addProperty.district')} value={form.district} onChange={(v) => set('district', v)} />
+        <Field label={t('addProperty.address')} value={form.address} onChange={(v) => set('address', v)} />
+        <Field label={t('addProperty.floor')} value={form.floor} onChange={(v) => set('floor', v)} type="number" />
+        <Field label={t('addProperty.area')} value={form.area} onChange={(v) => set('area', v)} type="number" />
+        <div>
+          <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">{t('addProperty.bedrooms')}</label>
+          <input
+            type="number"
+            value={form.bedrooms}
+            required
+            onChange={(e) => handleBedroomsChange(e.target.value)}
+            className="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-white"
+          />
+        </div>
+        <div>
+          <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">إجمالي عدد الأسرة (السراير)</label>
+          <input
+            type="number"
+            value={totalBeds}
+            disabled
+            className="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 cursor-not-allowed"
+          />
+        </div>
+        <Field label={t('addProperty.bathrooms')} value={form.bathrooms} onChange={(v) => set('bathrooms', v)} type="number" />
+      </div>
+
+      {/* Room Bed Configuration Panel */}
+      <div className="bg-slate-50 dark:bg-slate-700/30 p-5 rounded-2xl border border-slate-100 dark:border-slate-700 space-y-4 shadow-sm">
+        <h3 className="text-sm font-bold text-slate-800 dark:text-white">تقسيم الغرف بالأسرة</h3>
+        <div className="grid sm:grid-cols-2 gap-4">
+          {roomsConfig.map((room, idx) => (
+            <div key={idx} className="flex items-center gap-3 bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-100 dark:border-slate-700">
+              <label className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase w-20 shrink-0">
+                {room.name}:
+              </label>
+              <input
+                type="number"
+                min="1"
+                value={room.beds_count}
+                onChange={(e) => {
+                  const val = Math.max(1, parseInt(e.target.value) || 1);
+                  setRoomsConfig((prev) => {
+                    const next = [...prev];
+                    next[idx] = { ...next[idx], beds_count: val };
+                    return next;
+                  });
+                }}
+                className="w-20 px-3 py-1.5 text-sm rounded-lg border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:border-brand-500 outline-none"
+              />
+              <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">سراير</span>
+            </div>
+          ))}
+        </div>
       </div>
 
       <div className="grid sm:grid-cols-2 gap-4">
         <div>
-          <label className="text-xs font-semibold text-slate-500 uppercase">Gender</label>
-          <select value={form.gender_allowed} onChange={(e) => set('gender_allowed', e.target.value)} className="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200">
-            <option value="any">Any</option>
-            <option value="male">Male</option>
-            <option value="female">Female</option>
+          <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">الفئة المستهدفة للسكن</label>
+          <select value={form.tenant_type} onChange={(e) => set('tenant_type', e.target.value)} className="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-white font-medium">
+            <option value="all">لكافة الفئات (عائلات / طلبة / أفراد)</option>
+            <option value="students">طلبة فقط (سكن طلاب)</option>
+            <option value="families">عائلات فقط (سكن عائلي)</option>
+            <option value="individuals">أفراد / موظفين</option>
           </select>
         </div>
-        <label className="flex items-end gap-2 pb-2 text-sm font-medium text-slate-700">
+        <div>
+          <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">{t('addProperty.gender')}</label>
+          <select value={form.gender_allowed} onChange={(e) => set('gender_allowed', e.target.value)} className="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-white">
+            <option value="any">{t('addProperty.gender_any')}</option>
+            <option value="male">{t('addProperty.gender_male')}</option>
+            <option value="female">{t('addProperty.gender_female')}</option>
+          </select>
+        </div>
+        <label className="flex items-end gap-2 pb-2 text-sm font-medium text-slate-700 dark:text-slate-300 cursor-pointer">
           <input type="checkbox" checked={form.furnished} onChange={(e) => set('furnished', e.target.checked)} />
-          Furnished
+          {t('addProperty.furnished')}
         </label>
       </div>
 
       <div className="grid sm:grid-cols-2 gap-4">
-        <Field label="Monthly price (EGP)" value={form.price} onChange={(v) => set('price', v)} type="number" />
-        <Field label="Deposit (EGP)" value={form.deposit} onChange={(v) => set('deposit', v)} type="number" />
+        <Field
+          label={form.listing_type === 'shared_bed' ? 'الإيجار الشهري للسرير (جنيه)' : t('addProperty.price')}
+          value={form.price}
+          onChange={(v) => set('price', v)}
+          type="number"
+        />
+        <Field label={t('addProperty.deposit')} value={form.deposit} onChange={(v) => set('deposit', v)} type="number" />
       </div>
 
       <div>
         <div className="flex items-center justify-between mb-2">
-          <label className="text-xs font-semibold text-slate-500 uppercase">Photos ({form.images.length})</label>
+          <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">{t('addProperty.photos_count', { count: form.images.length })}</label>
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
@@ -251,7 +389,7 @@ export default function EditProperty() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1M12 12V4m0 0L8 8m4-4l4 4" />
               </svg>
             )}
-            {uploading ? 'Uploading…' : 'Add photos'}
+            {uploading ? t('addProperty.uploading') : t('addProperty.add_photos')}
           </button>
           <input
             ref={fileInputRef}
@@ -267,13 +405,13 @@ export default function EditProperty() {
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="w-full h-36 rounded-2xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center gap-2 text-slate-400 hover:border-brand-400 hover:text-brand-500 transition-colors"
+            className="w-full h-36 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-600 flex flex-col items-center justify-center gap-2 text-slate-400 hover:border-brand-400 hover:text-brand-500 transition-colors"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5M21 7.5V18M12 3v4.5" />
             </svg>
-            <span className="text-sm font-medium">Click to upload photos</span>
-            <span className="text-xs">JPG, PNG, WEBP — multiple files supported</span>
+            <span className="text-sm font-medium">{t('addProperty.click_upload')}</span>
+            <span className="text-xs">{t('addProperty.upload_hint')}</span>
           </button>
         ) : (
           <div className="grid grid-cols-4 gap-2">
@@ -310,7 +448,7 @@ export default function EditProperty() {
       </div>
 
       <div>
-        <label className="text-xs font-semibold text-slate-500 uppercase">Amenities</label>
+        <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">{t('addProperty.amenities')}</label>
         <div className="mt-2 flex flex-wrap gap-2">
           {amenities.map((a) => (
             <button
@@ -323,16 +461,16 @@ export default function EditProperty() {
                   : 'bg-white border-slate-200 text-slate-600'
               }`}
             >
-              {a.name}
+              {isAr ? (AMENITY_AR[a.name] || a.name) : a.name}
             </button>
           ))}
         </div>
       </div>
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 
-      <button type="submit" disabled={saving} className="px-6 py-3 rounded-xl bg-brand-600 text-white font-semibold disabled:opacity-60">
-        {saving ? 'Submitting…' : 'Submit changes for review'}
+      <button type="submit" disabled={saving} className="px-6 py-3 rounded-xl bg-brand-600 text-white font-semibold disabled:opacity-60 hover:bg-brand-700 transition">
+        {saving ? t('addProperty.submitting') : t('broker.submit_changes')}
       </button>
     </form>
   );
@@ -349,13 +487,13 @@ function Field({
 }) {
   return (
     <div>
-      <label className="text-xs font-semibold text-slate-500 uppercase">{label}</label>
+      <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">{label}</label>
       <input
         type={type}
         value={value}
         required={required}
         onChange={(e) => onChange(e.target.value)}
-        className="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200"
+        className="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-white"
       />
     </div>
   );
@@ -372,14 +510,14 @@ function Select({
 }) {
   return (
     <div>
-      <label className="text-xs font-semibold text-slate-500 uppercase">{label}</label>
+      <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">{label}</label>
       <select
         value={value}
         required={required}
         onChange={(e) => onChange(e.target.value)}
-        className="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200"
+        className="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-white"
       >
-        <option value="">Select…</option>
+        <option value="">—</option>
         {options.map((o) => (
           <option key={o.id} value={o.id}>{o.name}</option>
         ))}

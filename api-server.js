@@ -10,32 +10,24 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 app.use(express.json());
 
-const apiPath = path.join(__dirname, 'api');
-const files = fs.readdirSync(apiPath).filter(f => f.endsWith('.js'));
-
-// Mock some basic next.js/vercel req/res properties if needed
-app.use((req, res, next) => {
-  // Ensure query is parsed (express does this by default)
-  next();
-});
-
-for (const file of files) {
-  const route = '/api/' + file.replace('.js', '');
-  import(`file://${path.join(apiPath, file)}`).then(m => {
+app.all('/api/:endpoint', async (req, res) => {
+  const endpoint = req.params.endpoint;
+  const filePath = path.join(__dirname, 'api', `${endpoint}.js`);
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({ error: `API route /api/${endpoint} not found` });
+  }
+  try {
+    const mtime = fs.statSync(filePath).mtimeMs;
+    const m = await import(`file://${filePath}?t=${mtime}`);
     const handler = m.default;
-    app.all(route, async (req, res) => {
-      try {
-        await handler(req, res);
-      } catch (err) {
-        console.error(`Error in ${route}:`, err);
-        if (!res.headersSent) {
-          res.status(500).json({ error: err.message });
-        }
-      }
-    });
-    console.log(`Mounted ${route}`);
-  });
-}
+    await handler(req, res);
+  } catch (err) {
+    console.error(`Error in /api/${endpoint}:`, err);
+    if (!res.headersSent) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+});
 
 const PORT = 3001;
 app.listen(PORT, () => console.log(`API Server running on http://localhost:${PORT}`));

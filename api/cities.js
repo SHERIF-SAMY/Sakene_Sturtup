@@ -15,9 +15,21 @@ export default async function handler(req, res) {
     if (req.method === 'POST') {
       const { name, governorate, latitude, longitude } = req.body;
       if (!name) return res.status(400).json({ error: 'name required' });
+
+      // Check if city already exists (case-insensitive)
+      const { data: existing } = await supabase
+        .from('cities')
+        .select('*')
+        .ilike('name', name.trim())
+        .maybeSingle();
+
+      if (existing) {
+        return res.status(200).json(existing);
+      }
+
       const { data, error } = await supabase
         .from('cities')
-        .insert({ name, governorate: governorate || '', latitude, longitude })
+        .insert({ name: name.trim(), governorate: governorate || 'كفر الشيخ', latitude, longitude })
         .select()
         .single();
       if (error) throw error;

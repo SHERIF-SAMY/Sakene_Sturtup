@@ -47,7 +47,7 @@ export function listingTypeLabel(t: string) {
   const map: Record<string, string> = {
     entire_apartment: 'Entire Apartment',
     private_room: 'Private Room',
-    shared_bed: 'Shared Bed',
+    shared_bed: 'Bed Rental',
   };
   return map[t] || t;
 }

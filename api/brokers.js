@@ -12,18 +12,47 @@ export default async function handler(req, res) {
 
       if (slug || id || user_id) {
         let q = supabase.from('broker_profiles').select('*');
-        if (slug) q = q.eq('slug', slug);
+        if (slug) q = q.ilike('slug', slug);
         else if (id) q = q.eq('id', id);
         else q = q.eq('user_id', user_id);
-        const { data: broker, error } = await q.single();
+        let { data: broker, error } = await q.maybeSingle();
         if (error) throw error;
+        
+        if (!broker) {
+          if (user_id) {
+            // Check if user is actually a broker/owner and create it on the fly
+            const { data: userProfile } = await supabase.from('profiles').select('*').eq('id', user_id).maybeSingle();
+            if (userProfile && (userProfile.role === 'broker' || userProfile.role === 'owner')) {
+              const slug = `${userProfile.first_name}-${userProfile.last_name || userProfile.role}-${Date.now().toString(36)}`
+                .toLowerCase()
+                .replace(/[^a-z0-9-]/g, '-');
+                
+              const { data: newBroker, error: createError } = await supabase.from('broker_profiles').insert({
+                user_id,
+                company_name: `${userProfile.first_name} ${userProfile.last_name || ''}`.trim(),
+                bio: userProfile.role === 'owner' ? 'مالك عقار مباشر' : 'وسيط عقاري في كفر الشيخ',
+                experience_years: 1,
+                slug,
+              }).select().single();
+              
+              if (!createError && newBroker) {
+                broker = newBroker;
+              } else {
+                return res.status(404).json({ error: 'Broker profile not found and could not be created' });
+              }
+            } else {
+              return res.status(404).json({ error: 'Broker profile not found' });
+            }
+          } else {
+            return res.status(404).json({ error: 'Broker profile not found' });
+          }
+        }
 
-        // fetch profile separately to avoid FK cache issues
         const { data: profileData } = await supabase
           .from('profiles')
           .select('id, first_name, last_name, email, phone, avatar, is_verified')
           .eq('id', broker.user_id)
-          .single();
+          .maybeSingle();
 
         const { data: properties } = await supabase
           .from('properties')

@@ -17,7 +17,7 @@ export default async function handler(req, res) {
         .order('created_at', { ascending: false });
       if (error) throw error;
 
-      // Enrich favorites with property data
+      // Enrich favorites safely
       const enriched = await Promise.all((favorites || []).map(async (fav) => {
         let propertyData = null;
         if (fav.property_id) {
@@ -25,14 +25,14 @@ export default async function handler(req, res) {
             .from('properties')
             .select('*')
             .eq('id', fav.property_id)
-            .single();
+            .maybeSingle();
           
           if (prop) {
-            const { data: city } = await supabase.from('cities').select('name').eq('id', prop.city_id).single();
-            const { data: uni } = await supabase.from('universities').select('name').eq('id', prop.university_id).single();
+            const { data: city } = prop.city_id ? await supabase.from('cities').select('name').eq('id', prop.city_id).maybeSingle() : { data: null };
+            const { data: uni } = prop.university_id ? await supabase.from('universities').select('name').eq('id', prop.university_id).maybeSingle() : { data: null };
             const { data: imgs } = await supabase.from('property_images').select('image_url, is_cover, display_order').eq('property_id', prop.id);
             const { data: listings } = await supabase.from('listings').select('id, listing_type, price, status').eq('property_id', prop.id);
-            const { data: broker } = await supabase.from('broker_profiles').select('company_name, verified_badge, rating, slug').eq('id', prop.broker_id).single();
+            const { data: broker } = prop.broker_id ? await supabase.from('broker_profiles').select('company_name, verified_badge, rating, slug').eq('id', prop.broker_id).maybeSingle() : { data: null };
 
             propertyData = {
               ...prop,

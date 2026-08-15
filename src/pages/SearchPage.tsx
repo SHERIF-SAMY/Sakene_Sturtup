@@ -19,6 +19,7 @@ export default function SearchPage() {
   const [results, setResults] = useState<PropertyCardData[]>([]);
   const [unis, setUnis] = useState<Uni[]>([]);
   const [cities, setCities] = useState<City[]>([]);
+  const [districts, setDistricts] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
   const [favIds, setFavIds] = useState<Set<number>>(new Set());
@@ -28,11 +29,13 @@ export default function SearchPage() {
       q: params.get('q') || '',
       university_id: params.get('university_id') || '',
       city_id: params.get('city_id') || '',
+      district: params.get('district') || '',
       gender: params.get('gender') || '',
       listing_type: params.get('listing_type') || '',
       min_price: params.get('min_price') || '',
       max_price: params.get('max_price') || '',
       furnished: params.get('furnished') || '',
+      for_students: params.get('for_students') || '',
       sort: params.get('sort') || 'newest',
     }),
     [params]
@@ -48,6 +51,7 @@ export default function SearchPage() {
   useEffect(() => {
     apiGet<Uni[]>('/api/universities').then(setUnis).catch(console.error);
     apiGet<City[]>('/api/cities').then(setCities).catch(console.error);
+    apiGet<string[]>('/api/search?districts=true').then(setDistricts).catch(console.error);
   }, []);
 
   useEffect(() => {
@@ -104,29 +108,13 @@ export default function SearchPage() {
         />
       </div>
       <div>
-        <label className="text-xs font-semibold text-slate-500 uppercase">{t('search.university')}</label>
-        <select
-          value={filters.university_id}
-          onChange={(e) => update('university_id', e.target.value)}
-          className="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-sm"
-        >
-          <option value="">{t('search.any')}</option>
-          {unis.map((u) => (
-            <option key={u.id} value={u.id}>{u.name}</option>
-          ))}
-        </select>
-      </div>
-      <div>
         <label className="text-xs font-semibold text-slate-500 uppercase">{t('search.city')}</label>
         <select
           value={filters.city_id}
           onChange={(e) => update('city_id', e.target.value)}
           className="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-sm"
         >
-          <option value="">{t('search.any')}</option>
-          {cities.map((c) => (
-            <option key={c.id} value={c.id}>{c.name}</option>
-          ))}
+          <option value="">كفر الشيخ</option>
         </select>
       </div>
       <div>
@@ -174,15 +162,26 @@ export default function SearchPage() {
           />
         </div>
       </div>
-      <label className="flex items-center gap-2 text-sm text-slate-700">
-        <input
-          type="checkbox"
-          checked={filters.furnished === 'true'}
-          onChange={(e) => update('furnished', e.target.checked ? 'true' : '')}
-          className="rounded border-slate-300 text-brand-600"
-        />
-        {t('search.furnished_only')}
-      </label>
+      <div className="flex flex-col gap-2">
+        <label className="flex items-center gap-2 text-sm text-slate-700">
+          <input
+            type="checkbox"
+            checked={filters.furnished === 'true'}
+            onChange={(e) => update('furnished', e.target.checked ? 'true' : '')}
+            className="rounded border-slate-300 text-brand-600"
+          />
+          {t('search.furnished_only')}
+        </label>
+        <label className="flex items-center gap-2 text-sm text-slate-700">
+          <input
+            type="checkbox"
+            checked={filters.for_students === 'true'}
+            onChange={(e) => update('for_students', e.target.checked ? 'true' : '')}
+            className="rounded border-slate-300 text-brand-600"
+          />
+          للطلبة / سكن طلاب
+        </label>
+      </div>
     </div>
   );
 

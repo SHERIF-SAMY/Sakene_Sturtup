@@ -22,9 +22,9 @@ export default function ProtectedRoute({
 
   if (roles && profile && !roles.includes(profile.role)) {
     const dest =
-      profile.role === 'admin'
+      profile.role === 'admin' || profile.role === 'super_admin'
         ? '/admin'
-        : profile.role === 'broker'
+        : profile.role === 'broker' || profile.role === 'owner'
           ? '/broker'
           : '/dashboard';
     return <Navigate to={dest} replace />;
