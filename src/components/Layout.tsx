@@ -79,7 +79,7 @@ function ContactModal({ onClose }: { onClose: () => void }) {
             <div className="mb-5">
               <p className="text-xs font-semibold text-slate-500 uppercase mb-3">تواصل مباشر</p>
               <div className="grid grid-cols-2 gap-3">
-                <a href="https://wa.me/201016024660" target="_blank" rel="noopener noreferrer"
+                <a href="https://wa.me/201068411434" target="_blank" rel="noopener noreferrer"
                    className="flex items-center gap-2 justify-center py-3 px-3 rounded-2xl bg-green-50 border border-green-200 text-green-700 font-semibold text-sm hover:bg-green-100 transition">
                   <Phone className="w-4 h-4" /> واتساب
                 </a>
@@ -337,9 +337,9 @@ export default function Layout() {
             <h4 className="font-semibold text-slate-900 dark:text-white mb-3">{t('nav.footer_company')}</h4>
             <div className="space-y-2 text-sm text-slate-600 dark:text-slate-400">
               <p>كفر الشيخ، مصر</p>
-              <a href="https://wa.me/201016024660" target="_blank" rel="noopener noreferrer"
+              <a href="https://wa.me/201068411434" target="_blank" rel="noopener noreferrer"
                  className="flex items-center gap-1.5 hover:text-green-600 transition">
-                <Phone className="w-3.5 h-3.5" /> 01016024660
+                <Phone className="w-3.5 h-3.5" /> 01068411434
               </a>
               <a href="https://www.facebook.com/profile.php?id=61593318657572" target="_blank" rel="noopener noreferrer"
                  className="flex items-center gap-1.5 hover:text-blue-600 transition">

@@ -4,7 +4,7 @@ import { Calendar, Clock, MapPin, Phone, MessageCircle, CheckCircle, XCircle, Us
 import { apiGet, apiSend, formatPrice } from '../../lib/api';
 import LoadingSpinner from '../../components/LoadingSpinner';
 
-const PAYMENT_NUMBER = '01016024660';
+const PAYMENT_NUMBER = '01068411434';
 
 type Visit = {
   id: number;

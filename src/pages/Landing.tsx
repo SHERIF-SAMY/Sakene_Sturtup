@@ -65,7 +65,7 @@ function ContactModal({ onClose }: { onClose: () => void }) {
               <p className="text-xs font-semibold text-slate-500 uppercase mb-3">تواصل مباشر</p>
               <div className="grid grid-cols-2 gap-3">
                 <a
-                  href="https://wa.me/201016024660"
+                  href="https://wa.me/201068411434"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 justify-center py-3 px-3 rounded-2xl bg-green-50 border border-green-200 text-green-700 font-semibold text-sm hover:bg-green-100 transition"
@@ -522,7 +522,7 @@ export default function Landing() {
               <Facebook className="w-4 h-4" /> صفحتنا على فيسبوك
             </a>
             <a
-              href="https://wa.me/201016024660"
+              href="https://wa.me/201068411434"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-green-500 text-white font-semibold text-sm hover:bg-green-600 transition shadow-sm"
