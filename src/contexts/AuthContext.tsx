@@ -10,6 +10,7 @@ export type Profile = {
   last_name: string;
   phone: string | null;
   role: 'tenant' | 'student' | 'broker' | 'admin' | 'owner' | 'super_admin';
+  is_broker_account?: boolean;
   avatar: string | null;
   is_verified: boolean;
   status: string;

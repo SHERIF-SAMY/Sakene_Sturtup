@@ -29,6 +29,7 @@ type Visit = {
     last_name: string;
     email: string;
     phone?: string;
+    is_broker_account?: boolean;
   };
   listings?: {
     listing_type: string;
@@ -76,6 +77,16 @@ function formatRentPeriod(visit: Visit): string {
   return '';
 }
 
+function formatWaPhone(rawPhone?: string): string {
+  if (!rawPhone) return '';
+  let cleaned = rawPhone.replace(/[^0-9]/g, '');
+  if (!cleaned) return '';
+  if (cleaned.startsWith('20')) return cleaned;
+  if (cleaned.startsWith('0')) return '2' + cleaned;
+  if (cleaned.startsWith('1')) return '20' + cleaned;
+  return '20' + cleaned;
+}
+
 function buildTenantWhatsApp(visit: Visit): string {
   const prop = visit.listings?.properties;
   const propTitle = prop?.title || 'العقار';
@@ -104,8 +115,8 @@ ${rentPeriodStr ? `• فترة الإيجار المطلوبة: ${rentPeriodStr
 
 شكراً لاختيارك منصة Agarly 🏡`;
 
-  const phone = visit.student?.phone?.replace(/[^0-9]/g, '').replace(/^0/, '20');
-  return `https://wa.me/${phone || ''}?text=${encodeURIComponent(msg)}`;
+  const phone = formatWaPhone(visit.student?.phone);
+  return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
 }
 
 function buildOwnerWhatsApp(visit: Visit): string {
@@ -132,8 +143,63 @@ ${rentPeriodStr ? `• فترة الإيجار المطلوبة: ${rentPeriodStr
 
 شكراً لثقتك في منصة Agarly 🏡`;
 
-  const phone = visit.owner?.phone?.replace(/[^0-9]/g, '').replace(/^0/, '20');
-  return `https://wa.me/${phone || ''}?text=${encodeURIComponent(msg)}`;
+  const phone = formatWaPhone(visit.owner?.phone);
+  return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+}
+
+function buildBrokerOwnerInitialWhatsApp(visit: Visit): string {
+  const prop = visit.listings?.properties;
+  const propTitle = prop?.title || 'العقار';
+  const propNum = prop?.property_number ? ` (شقة رقم ${prop.property_number})` : '';
+  const brokerName = visit.owner ? `${visit.owner.first_name} ${visit.owner.last_name}`.trim() : 'السمسار';
+  const rentPeriodStr = formatRentPeriod(visit);
+
+  const msg = `مرحباً ${brokerName} 👋
+
+🏠 يوجد طلب حجز لشقتك "${propTitle}"${propNum} (طلب رقم #${visit.id}) عبر منصة Agarly!
+
+📋 التفاصيل:
+• موعد المعاينة المطلوب: ${visit.visit_date} الساعة ${visit.visit_time}
+${rentPeriodStr ? `• فترة الإيجار المطلوبة: ${rentPeriodStr}\n` : ''}
+💳 في حالة تم الاتفاق الكامل مع المستأجر، يجب عليك تسديد مستحقات خدمة المنصة (400 ج):
+• المبلغ: 400 جنيه مصري
+• الدفع عبر فودافون كاش أو إنستا باي على الرقم: ${PAYMENT_NUMBER}
+• يُرجى إرسال صورة التحويل هنا في الشات للتأكيد.
+
+شكراً لتعاونك مع منصة Agarly 🏡`;
+
+  const phone = formatWaPhone(visit.owner?.phone);
+  return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+}
+
+function buildBrokerOwnerConfirmedWhatsApp(visit: Visit): string {
+  const prop = visit.listings?.properties;
+  const propTitle = prop?.title || 'العقار';
+  const propNum = prop?.property_number ? ` (شقة رقم ${prop.property_number})` : '';
+  const brokerName = visit.owner ? `${visit.owner.first_name} ${visit.owner.last_name}`.trim() : 'السمسار';
+  const tenantName = visit.student ? `${visit.student.first_name} ${visit.student.last_name}`.trim() : 'المستأجر';
+  const tenantPhone = visit.student?.phone || 'غير متوفر';
+  const rentPeriodStr = formatRentPeriod(visit);
+
+  const msg = `مرحباً ${brokerName} 👋
+
+✅ تم تأكيد الحجز! إليك بيانات المستأجر للتواصل المباشر والربط بينكما:
+
+📋 بيانات المستأجر:
+• الاسم: ${tenantName}
+• رقم الهاتف: ${tenantPhone}
+
+🏠 بيانات الشقة والمعاينة:
+• الشقة: ${propTitle}${propNum}
+• الموعد المحدد: ${visit.visit_date} الساعة ${visit.visit_time}
+${rentPeriodStr ? `• فترة الإيجار المطلوبة: ${rentPeriodStr}\n` : ''}
+💳 يُرجى سداد مستحقات خدمة المنصة (400 ج) على الرقم: ${PAYMENT_NUMBER}
+• يُرجى إرسال صورة التحويل هنا في الشات للتأكيد.
+
+نتمنى لك التوفيق مع منصة Agarly 🏡`;
+
+  const phone = formatWaPhone(visit.owner?.phone);
+  return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
 }
 
 function buildBrokerWhatsApp(visit: Visit): string {
@@ -155,17 +221,16 @@ function buildBrokerWhatsApp(visit: Visit): string {
 • الشقة المطلوب معاينتها: ${propTitle}${propNum}
 • موعد المعاينة: ${visit.visit_date} الساعة ${visit.visit_time}
 ${rentPeriodStr ? `• فترة الإيجار المطلوبة: ${rentPeriodStr}\n` : ''}
-💳 لإتمام الإجراءات وتأكيد المعاينة والربط مع المالك، يرجى سداد رسوم الخدمة (200 ج):
+💳 في حالة تم الاتفاق بين الطرفين، يرجى سداد 400ج خدمة علي الرقم ثم ارسال صوره الايصال في الشات للتاكيد:
 • الدفع عبر فودافون كاش أو إنستا باي على الرقم: ${PAYMENT_NUMBER}
-• أرسل صورة الإيصال هنا لإكمال الربط مع المالك.
 
 📌 ملاحظة هامة:
 في حال لم يتم الاتفاق بعد المعاينة، يحق للمستأجر الاستفادة بمعاينة شقة أخرى من المنصة بدون أي رسوم إضافية.
 
 شكراً لتعاونكم مع منصة Agarly 🤝`;
 
-  const phone = visit.referral_broker_phone?.replace(/[^0-9]/g, '').replace(/^0/, '20');
-  return `https://wa.me/${phone || ''}?text=${encodeURIComponent(msg)}`;
+  const phone = formatWaPhone(visit.referral_broker_phone);
+  return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
 }
 
 function buildShareOwnerInfoToTenant(visit: Visit): string {
@@ -196,8 +261,8 @@ ${rentPeriodStr ? `• فترة الإيجار المطلوبة: ${rentPeriodStr
 
 نتمنى لك التوفيق مع منصة Agarly 🏡`;
 
-  const phone = visit.student?.phone?.replace(/[^0-9]/g, '').replace(/^0/, '20');
-  return `https://wa.me/${phone || ''}?text=${encodeURIComponent(msg)}`;
+  const phone = formatWaPhone(visit.student?.phone);
+  return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
 }
 
 function buildShareTenantInfoToOwner(visit: Visit): string {
@@ -226,8 +291,8 @@ ${rentPeriodStr ? `• فترة الإيجار المطلوبة: ${rentPeriodStr
 
 نتمنى لك التوفيق مع منصة Agarly 🏡`;
 
-  const phone = visit.owner?.phone?.replace(/[^0-9]/g, '').replace(/^0/, '20');
-  return `https://wa.me/${phone || ''}?text=${encodeURIComponent(msg)}`;
+  const phone = formatWaPhone(visit.owner?.phone);
+  return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
 }
 
 export default function AdminVisits() {
@@ -331,11 +396,12 @@ export default function AdminVisits() {
               prop?.property_images?.[0]?.image_url ||
               'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400&q=80';
 
+            const isBrokerOwner = !!v.owner?.is_broker_account;
             const tenantWaLink = buildTenantWhatsApp(v);
-            const ownerWaLink = buildOwnerWhatsApp(v);
+            const ownerWaLink = isBrokerOwner ? buildBrokerOwnerInitialWhatsApp(v) : buildOwnerWhatsApp(v);
             const brokerWaLink = buildBrokerWhatsApp(v);
             const shareOwnerToTenantLink = buildShareOwnerInfoToTenant(v);
-            const shareTenantToOwnerLink = buildShareTenantInfoToOwner(v);
+            const shareTenantToOwnerLink = isBrokerOwner ? buildBrokerOwnerConfirmedWhatsApp(v) : buildShareTenantInfoToOwner(v);
 
             return (
               <div key={v.id} className="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm">
@@ -351,6 +417,11 @@ export default function AdminVisits() {
                     {prop?.property_number && (
                       <span className="text-xs text-emerald-800 font-bold bg-emerald-100 px-2 py-0.5 rounded">
                         شقة رقم #{prop.property_number}
+                      </span>
+                    )}
+                    {isBrokerOwner && (
+                      <span className="text-xs text-purple-800 font-bold bg-purple-100 px-2 py-0.5 rounded border border-purple-200">
+                        🏠 شقة سمسار (400ج)
                       </span>
                     )}
                   </div>
@@ -419,7 +490,7 @@ export default function AdminVisits() {
                         </div>
                       )}
                       <p className="text-xs text-amber-700 font-semibold mt-1">
-                        💳 رسوم الخدمة: {formatPrice(v.booking_fee || 200)} (المستأجر والمالك)
+                        💳 رسوم الخدمة: {isBrokerOwner ? '400 ج (السمسار) + 200 ج (المستأجر)' : `${formatPrice(v.booking_fee || 200)} (المستأجر والمالك)`}
                       </p>
                     </div>
 
@@ -452,7 +523,14 @@ export default function AdminVisits() {
                           <Home className="w-3.5 h-3.5 text-emerald-600" />
                         </div>
                         <div>
-                          <p className="text-xs font-semibold text-slate-400">المالك</p>
+                          <p className="text-xs font-semibold text-slate-400 flex items-center gap-1">
+                            {isBrokerOwner ? 'السمسار المالك' : 'المالك'}
+                            {isBrokerOwner && (
+                              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-800 border border-purple-200">
+                                سمسار (400ج)
+                              </span>
+                            )}
+                          </p>
                           {v.owner ? (
                             <>
                               <p className="text-sm font-semibold text-slate-900">{v.owner.first_name} {v.owner.last_name}</p>
@@ -503,10 +581,12 @@ export default function AdminVisits() {
                       href={ownerWaLink}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 text-emerald-700 text-xs font-semibold hover:bg-emerald-100 border border-emerald-200 transition"
+                      className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition ${
+                        isBrokerOwner ? 'bg-purple-50 text-purple-800 hover:bg-purple-100 border-purple-200' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-emerald-200'
+                      }`}
                     >
                       <MessageCircle className="w-4 h-4" />
-                      واتساب المالك
+                      {isBrokerOwner ? 'واتساب السمسار (طلب حجز 400ج)' : 'واتساب المالك'}
                     </a>
 
                     {v.via_broker && v.referral_broker_phone && (
@@ -563,10 +643,12 @@ export default function AdminVisits() {
                           href={shareTenantToOwnerLink}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-teal-600 text-white text-xs font-semibold hover:bg-teal-700 transition shadow-sm"
+                          className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-white text-xs font-semibold transition shadow-sm ${
+                            isBrokerOwner ? 'bg-purple-600 hover:bg-purple-700' : 'bg-teal-600 hover:bg-teal-700'
+                          }`}
                         >
                           <MessageCircle className="w-4 h-4" />
-                          إرسال بيانات المستأجر للمالك
+                          {isBrokerOwner ? 'إرسال بيانات المستأجر للسمسار (400ج)' : 'إرسال بيانات المستأجر للمالك'}
                         </a>
                         <button
                           onClick={() => updateStatus(v.id, 'completed')}

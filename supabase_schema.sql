@@ -45,6 +45,7 @@ create table if not exists profiles (
   phone       text,
   avatar      text,
   role        text not null default 'tenant' check (role in ('tenant','student','broker','owner','admin')),
+  is_broker_account boolean not null default false,
   is_verified boolean not null default false,
   status      text not null default 'active' check (status in ('active','suspended','deleted')),
   created_at  timestamptz default now(),

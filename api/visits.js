@@ -95,7 +95,7 @@ export default async function handler(req, res) {
 
             // Fetch owner profile
             if (prop?.owner_id) {
-              const { data: o } = await supabase.from('profiles').select('first_name, last_name, email, phone').eq('id', prop.owner_id).maybeSingle();
+              const { data: o } = await supabase.from('profiles').select('first_name, last_name, email, phone, is_broker_account').eq('id', prop.owner_id).maybeSingle();
               owner = o || null;
             }
           }
@@ -290,12 +290,16 @@ export default async function handler(req, res) {
         is_read: false,
       });
 
-      // Notify owner about the booking and the 200 EGP platform fee
+      // Notify owner about the booking and the platform fee
       if (ownerUserId) {
+        const { data: ownerProf } = await supabase.from('profiles').select('is_broker_account').eq('id', ownerUserId).maybeSingle();
+        const isBrokerAcc = ownerProf?.is_broker_account;
         await supabase.from('notifications').insert({
           user_id: ownerUserId,
           title: '🏠 طلب حجز لشقتك',
-          body: `يوجد طلب حجز جديد لشقتك ${propNum} "${propTitle}" بتاريخ ${visit_date}. في حالة تأجير شقتك، هناك رسوم خدمة بقيمة 200 ج تُدفع عبر فودافون كاش أو إنستا باي على الرقم: 01016024660.`,
+          body: isBrokerAcc
+            ? `يوجد طلب حجز جديد لشقتك ${propNum} "${propTitle}" بتاريخ ${visit_date}. في حالة تم الاتفاق الكامل مع المستأجر، هناك رسوم خدمة بقيمة 400 ج تُدفع عبر فودافون كاش أو إنستا باي على الرقم: 01016024660.`
+            : `يوجد طلب حجز جديد لشقتك ${propNum} "${propTitle}" بتاريخ ${visit_date}. في حالة تأجير شقتك، هناك رسوم خدمة بقيمة 200 ج تُدفع عبر فودافون كاش أو إنستا باي على الرقم: 01016024660.`,
           type: 'new_visit',
           is_read: false,
         });

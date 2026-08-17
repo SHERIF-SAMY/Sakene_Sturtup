@@ -52,7 +52,7 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'POST') {
-      const { id, email, first_name, last_name, phone, role } = req.body;
+      const { id, email, first_name, last_name, phone, role, is_broker_account } = req.body;
       if (!id || !email) {
         return res.status(400).json({ error: 'id and email required' });
       }
@@ -69,6 +69,7 @@ export default async function handler(req, res) {
           last_name: last_name || '',
           phone: phone || null,
           role: userRole,
+          is_broker_account: !!is_broker_account,
           is_verified: true,
           status: 'active',
         }, { onConflict: 'id' })
@@ -88,7 +89,7 @@ export default async function handler(req, res) {
             await supabase.from('broker_profiles').insert({
               user_id: id,
               company_name: `${first_name} ${last_name || ''}`.trim(),
-              bio: userRole === 'owner' ? 'مالك عقار مباشر' : 'وسيط عقاري في كفر الشيخ',
+              bio: is_broker_account ? 'سمسار عقاري معتمد في كفر الشيخ' : userRole === 'owner' ? 'مالك عقار مباشر' : 'وسيط عقاري في كفر الشيخ',
               experience_years: 1,
               slug,
             });

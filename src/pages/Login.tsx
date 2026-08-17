@@ -13,8 +13,8 @@ export default function Login() {
   const { setProfileState } = useAuth();
   const { t } = useTranslation();
   const [mode, setMode] = useState<'login' | 'signup'>(params.get('mode') === 'signup' ? 'signup' : 'login');
-  const [role, setRole] = useState<'tenant' | 'owner'>(
-    params.get('role') === 'owner' ? 'owner' : 'tenant'
+  const [accountType, setAccountType] = useState<'tenant' | 'owner' | 'broker'>(
+    params.get('role') === 'owner' ? 'owner' : params.get('role') === 'broker' ? 'broker' : 'tenant'
   );
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -224,12 +224,16 @@ export default function Login() {
           throw new Error(errBody.error || 'البريد الإلكتروني أو رقم الهاتف مستخدم بالفعل بحساب آخر.');
         }
 
+        const effectiveRole = accountType === 'tenant' ? 'tenant' : 'owner';
+        const isBrokerAccount = accountType === 'broker';
+
         const { data, error: err } = await supabase.auth.signUp({
           email: email.trim(),
           password,
           options: {
             data: {
-              role,
+              role: effectiveRole,
+              is_broker_account: isBrokerAccount,
               first_name: firstName.trim(),
               last_name: lastName.trim(),
               phone: phone.trim(),
@@ -254,14 +258,15 @@ export default function Login() {
           first_name: firstName.trim(),
           last_name: lastName.trim(),
           phone: phone.trim(),
-          role,
+          role: effectiveRole,
+          is_broker_account: isBrokerAccount,
         });
 
         if (profile) {
           setProfileState(profile);
           redirectFor(profile.role);
         } else {
-          redirectFor(role);
+          redirectFor(effectiveRole);
         }
       }
     } catch (err: unknown) {
@@ -288,17 +293,21 @@ export default function Login() {
 
         <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm p-6 sm:p-8">
           {mode === 'signup' && (
-            <div className="grid grid-cols-2 gap-1.5 p-1 bg-slate-100 dark:bg-slate-700 rounded-xl mb-6">
-              {(['tenant', 'owner'] as const).map((r) => (
+            <div className="grid grid-cols-3 gap-1 p-1 bg-slate-100 dark:bg-slate-700 rounded-xl mb-6">
+              {[
+                { type: 'tenant', label: t('login.tenant') || 'مستأجر' },
+                { type: 'owner', label: t('login.owner') || 'مالك شقة' },
+                { type: 'broker', label: 'سمسار' },
+              ].map(({ type, label }) => (
                 <button
-                  key={r}
+                  key={type}
                   type="button"
-                  onClick={() => setRole(r)}
+                  onClick={() => setAccountType(type as any)}
                   className={`py-2 rounded-lg text-xs font-semibold capitalize transition ${
-                    role === r ? 'bg-white dark:bg-slate-600 text-brand-700 dark:text-brand-400 shadow-sm' : 'text-slate-500 dark:text-slate-400'
+                    accountType === type ? 'bg-white dark:bg-slate-600 text-brand-700 dark:text-brand-400 shadow-sm' : 'text-slate-500 dark:text-slate-400'
                   }`}
                 >
-                  {r === 'tenant' ? t('login.tenant') : t('login.owner')}
+                  {label}
                 </button>
               ))}
             </div>

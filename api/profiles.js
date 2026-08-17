@@ -51,7 +51,7 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'POST') {
-      const { id, email, first_name, last_name, phone, role, avatar } = req.body;
+      const { id, email, first_name, last_name, phone, role, avatar, is_broker_account } = req.body;
       if (!id || !email) return res.status(400).json({ error: 'id and email required' });
       const { data: existing } = await supabase.from('profiles').select('*').eq('id', id).maybeSingle();
       
@@ -61,7 +61,7 @@ export default async function handler(req, res) {
         if (role && existing.role !== targetRole) {
           const { data: updated } = await supabase
             .from('profiles')
-            .update({ role: targetRole })
+            .update({ role: targetRole, is_broker_account: !!is_broker_account })
             .eq('id', id)
             .select()
             .single();
@@ -79,6 +79,7 @@ export default async function handler(req, res) {
           last_name: last_name || '',
           phone: phone || null,
           role: targetRole,
+          is_broker_account: !!is_broker_account,
           avatar: avatar || null,
           is_verified: true,
           status: 'active',
@@ -99,7 +100,7 @@ export default async function handler(req, res) {
     if (req.method === 'PUT') {
       const { id, ...updates } = req.body;
       if (!id) return res.status(400).json({ error: 'id required' });
-      const allowed = ['first_name', 'last_name', 'phone', 'avatar', 'role', 'is_verified', 'status'];
+      const allowed = ['first_name', 'last_name', 'phone', 'avatar', 'role', 'is_verified', 'status', 'is_broker_account'];
       const payload = {};
       for (const k of allowed) if (updates[k] !== undefined) payload[k] = updates[k];
       const { data, error } = await supabase.from('profiles').update(payload).eq('id', id).select().single();
