@@ -1,4 +1,4 @@
-import supabase from './db-client.js';
+import supabase from './_db-client.js';
 
 export async function requireAuth(req, res, allowedRoles = []) {
   const authHeader = req.headers.authorization;

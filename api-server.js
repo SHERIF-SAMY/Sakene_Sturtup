@@ -12,6 +12,9 @@ app.use(express.json());
 
 app.all('/api/:endpoint', async (req, res) => {
   const endpoint = req.params.endpoint;
+  if (endpoint.startsWith('_')) {
+    return res.status(404).json({ error: `API route /api/${endpoint} not found` });
+  }
   const filePath = path.join(__dirname, 'api', `${endpoint}.js`);
   if (!fs.existsSync(filePath)) {
     return res.status(404).json({ error: `API route /api/${endpoint} not found` });

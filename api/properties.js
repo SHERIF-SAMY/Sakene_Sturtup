@@ -1,5 +1,5 @@
-import supabase from './db-client.js';
-import { requireAuth } from './auth-helper.js';
+import supabase from './_db-client.js';
+import { requireAuth } from './_auth-helper.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');

@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
-import { triggerRestore } from './db-wake.js';
+import { triggerRestore } from './_db-wake.js';
 
 dotenv.config();
 
