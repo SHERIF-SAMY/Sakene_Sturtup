@@ -1,4 +1,4 @@
-import supabase from './_db-client.js';
+import supabase from '../_db-client.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');

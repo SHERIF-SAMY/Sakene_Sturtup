@@ -15,7 +15,7 @@ app.all('/api/:endpoint', async (req, res) => {
   if (endpoint.startsWith('_')) {
     return res.status(404).json({ error: `API route /api/${endpoint} not found` });
   }
-  const filePath = path.join(__dirname, 'api', `${endpoint}.js`);
+  const filePath = path.join(__dirname, 'api', '_routes', `${endpoint}.js`);
   if (!fs.existsSync(filePath)) {
     return res.status(404).json({ error: `API route /api/${endpoint} not found` });
   }
