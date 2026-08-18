@@ -96,24 +96,24 @@ function buildTenantWhatsApp(visit: Visit): string {
   const price = visit.listings?.price ? formatPrice(visit.listings.price) : '';
   const rentPeriodStr = formatRentPeriod(visit);
 
-  const msg = `مرحباً ${tenantName} 👋
+  const msg = `مرحباً ${tenantName}
 
-✅ تم قبول طلب معاينتك (رقم #${visit.id}) عبر منصة Agarly!
+تم قبول طلب معاينتك (رقم #${visit.id}) عبر منصة Agarly.
 
-🏠 تفاصيل الشقة:
+تفاصيل الشقة:
 • الشقة: ${propTitle}${propNum}
 • العنوان: ${propAddr}
 • موعد المعاينة: ${visit.visit_date} الساعة ${visit.visit_time}
 ${rentPeriodStr ? `• فترة الإيجار المطلوبة: ${rentPeriodStr}\n` : ''}${price ? `• الإيجار الشهري: ${price}\n` : ''}
-💳 لإتمام الإجراءات وتأكيد المعاينة والربط مع المالك، يرجى دفع رسوم الخدمة:
+لإتمام الإجراءات وتأكيد المعاينة والربط مع المالك، يرجى دفع رسوم الخدمة:
 • المبلغ: 200 جنيه مصري
 • الدفع عبر فودافون كاش أو إنستا باي على الرقم: ${PAYMENT_NUMBER}
 • أرسل صورة الإيصال هنا لتأكيد حجزك ومشاركة بيانات المالك والربط بينكما.
 
-📌 ملاحظة هامة:
+ملاحظة هامة:
 في حال لم يتم الاتفاق بعد المعاينة، يحق لك الاستفادة بمعاينة شقة أخرى من المنصة بدون أي رسوم إضافية.
 
-شكراً لاختيارك منصة Agarly 🏡`;
+شكراً لاختيارك منصة Agarly`;
 
   const phone = formatWaPhone(visit.student?.phone);
   return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
@@ -126,22 +126,22 @@ function buildOwnerWhatsApp(visit: Visit): string {
   const ownerName = visit.owner ? `${visit.owner.first_name} ${visit.owner.last_name}`.trim() : '';
   const rentPeriodStr = formatRentPeriod(visit);
 
-  const msg = `مرحباً ${ownerName} 👋
+  const msg = `مرحباً ${ownerName}
 
-🏠 يوجد شخص مهتم بشقتك "${propTitle}"${propNum} (طلب رقم #${visit.id}) عبر منصة Agarly!
+يوجد شخص مهتم بشقتك "${propTitle}"${propNum} (طلب رقم #${visit.id}) عبر منصة Agarly.
 
-📋 التفاصيل:
+التفاصيل:
 • موعد المعاينة المطلوب: ${visit.visit_date} الساعة ${visit.visit_time}
 ${rentPeriodStr ? `• فترة الإيجار المطلوبة: ${rentPeriodStr}\n` : ''}
-💳 لإتمام الإجراءات وتزويدك ببيانات المستأجر والربط بينكما، يرجى دفع رسوم خدمة المنصة:
+لإتمام الإجراءات وتزويدك ببيانات المستأجر والربط بينكما، يرجى دفع رسوم خدمة المنصة:
 • المبلغ: 200 جنيه مصري
 • الدفع عبر فودافون كاش أو إنستا باي على الرقم: ${PAYMENT_NUMBER}
 • أرسل صورة الإيصال هنا لتأكيد حجز المعاينة وإرسال تفاصيل المستأجر.
 
-📌 ملاحظة هامة:
+ملاحظة هامة:
 في حال لم يتم الاتفاق بعد المعاينة، لا تُستحق أي رسوم إضافية على الصفقة الفاشلة.
 
-شكراً لثقتك في منصة Agarly 🏡`;
+شكراً لثقتك في منصة Agarly`;
 
   const phone = formatWaPhone(visit.owner?.phone);
   return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
@@ -154,19 +154,19 @@ function buildBrokerOwnerInitialWhatsApp(visit: Visit): string {
   const brokerName = visit.owner ? `${visit.owner.first_name} ${visit.owner.last_name}`.trim() : 'السمسار';
   const rentPeriodStr = formatRentPeriod(visit);
 
-  const msg = `مرحباً ${brokerName} 👋
+  const msg = `مرحباً ${brokerName}
 
-🏠 يوجد طلب حجز لشقتك "${propTitle}"${propNum} (طلب رقم #${visit.id}) عبر منصة Agarly!
+يوجد طلب حجز لشقتك "${propTitle}"${propNum} (طلب رقم #${visit.id}) عبر منصة Agarly.
 
-📋 التفاصيل:
+التفاصيل:
 • موعد المعاينة المطلوب: ${visit.visit_date} الساعة ${visit.visit_time}
 ${rentPeriodStr ? `• فترة الإيجار المطلوبة: ${rentPeriodStr}\n` : ''}
-💳 في حالة تم الاتفاق الكامل مع المستأجر، يجب عليك تسديد مستحقات خدمة المنصة (400 ج):
+في حالة تم الاتفاق الكامل مع المستأجر، يجب عليك تسديد مستحقات خدمة المنصة (400 ج):
 • المبلغ: 400 جنيه مصري
 • الدفع عبر فودافون كاش أو إنستا باي على الرقم: ${PAYMENT_NUMBER}
 • يُرجى إرسال صورة التحويل هنا في الشات للتأكيد.
 
-شكراً لتعاونك مع منصة Agarly 🏡`;
+شكراً لتعاونك مع منصة Agarly`;
 
   const phone = formatWaPhone(visit.owner?.phone);
   return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
@@ -181,22 +181,22 @@ function buildBrokerOwnerConfirmedWhatsApp(visit: Visit): string {
   const tenantPhone = visit.student?.phone || 'غير متوفر';
   const rentPeriodStr = formatRentPeriod(visit);
 
-  const msg = `مرحباً ${brokerName} 👋
+  const msg = `مرحباً ${brokerName}
 
-✅ تم تأكيد الحجز! إليك بيانات المستأجر للتواصل المباشر والربط بينكما:
+تم تأكيد الحجز. إليك بيانات المستأجر للتواصل المباشر والربط بينكما:
 
-📋 بيانات المستأجر:
+بيانات المستأجر:
 • الاسم: ${tenantName}
 • رقم الهاتف: ${tenantPhone}
 
-🏠 بيانات الشقة والمعاينة:
+بيانات الشقة والمعاينة:
 • الشقة: ${propTitle}${propNum}
 • الموعد المحدد: ${visit.visit_date} الساعة ${visit.visit_time}
 ${rentPeriodStr ? `• فترة الإيجار المطلوبة: ${rentPeriodStr}\n` : ''}
-💳 يُرجى سداد مستحقات خدمة المنصة (400 ج) على الرقم: ${PAYMENT_NUMBER}
+يُرجى سداد مستحقات خدمة المنصة (400 ج) على الرقم: ${PAYMENT_NUMBER}
 • يُرجى إرسال صورة التحويل هنا في الشات للتأكيد.
 
-نتمنى لك التوفيق مع منصة Agarly 🏡`;
+نتمنى لك التوفيق مع منصة Agarly`;
 
   const phone = formatWaPhone(visit.owner?.phone);
   return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
@@ -211,23 +211,23 @@ function buildBrokerWhatsApp(visit: Visit): string {
   const tenantPhone = visit.student?.phone || 'غير متوفر';
   const rentPeriodStr = formatRentPeriod(visit);
 
-  const msg = `مرحباً أستاذ ${brokerName} 👋
+  const msg = `مرحباً أستاذ ${brokerName}
 
 إليك تفاصيل المستأجر المحال من طرفكم لطلب رقم #${visit.id} على منصة Agarly:
 
-📋 بيانات المستأجر:
+بيانات المستأجر:
 • اسم المستأجر: ${tenantName}
 • رقم هاتف المستأجر: ${tenantPhone}
 • الشقة المطلوب معاينتها: ${propTitle}${propNum}
 • موعد المعاينة: ${visit.visit_date} الساعة ${visit.visit_time}
 ${rentPeriodStr ? `• فترة الإيجار المطلوبة: ${rentPeriodStr}\n` : ''}
-💳 في حالة تم الاتفاق بين الطرفين، يرجى سداد 400ج خدمة علي الرقم ثم ارسال صوره الايصال في الشات للتاكيد:
+في حالة تم الاتفاق بين الطرفين، يرجى سداد 400ج خدمة علي الرقم ثم ارسال صوره الايصال في الشات للتاكيد:
 • الدفع عبر فودافون كاش أو إنستا باي على الرقم: ${PAYMENT_NUMBER}
 
-📌 ملاحظة هامة:
+ملاحظة هامة:
 في حال لم يتم الاتفاق بعد المعاينة، يحق للمستأجر الاستفادة بمعاينة شقة أخرى من المنصة بدون أي رسوم إضافية.
 
-شكراً لتعاونكم مع منصة Agarly 🤝`;
+شكراً لتعاونكم مع منصة Agarly`;
 
   const phone = formatWaPhone(visit.referral_broker_phone);
   return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
@@ -243,23 +243,23 @@ function buildShareOwnerInfoToTenant(visit: Visit): string {
   const ownerPhone = visit.owner?.phone || 'غير متوفر';
   const rentPeriodStr = formatRentPeriod(visit);
 
-  const msg = `مرحباً ${tenantName} 👋
+  const msg = `مرحباً ${tenantName}
 
-✅ تم تأكيد حجزك ودفع المستحقات بنجاح! إليك بيانات مالك الشقة للتواصل المباشر والربط بينكما:
+تم تأكيد حجزك ودفع المستحقات بنجاح. إليك بيانات مالك الشقة للتواصل المباشر والربط بينكما:
 
-📋 بيانات المالك:
+بيانات المالك:
 • الاسم: ${ownerName}
 • رقم الهاتف: ${ownerPhone}
 
-🏠 بيانات الشقة والمعاينة:
+بيانات الشقة والمعاينة:
 • الشقة: ${propTitle}${propNum}
 • العنوان: ${propAddr}
 • الموعد: ${visit.visit_date} الساعة ${visit.visit_time}
 ${rentPeriodStr ? `• فترة الإيجار المطلوبة: ${rentPeriodStr}\n` : ''}
-📌 ملاحظة هامة:
+ملاحظة هامة:
 في حال تم التنسيق ولم يتم الاتفاق بينكما بعد المعاينة، يحق لك الاستفادة بمعاينة شقة أخرى من المنصة بدون أي رسوم إضافية (مجاناً).
 
-نتمنى لك التوفيق مع منصة Agarly 🏡`;
+نتمنى لك التوفيق مع منصة Agarly`;
 
   const phone = formatWaPhone(visit.student?.phone);
   return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
@@ -274,22 +274,22 @@ function buildShareTenantInfoToOwner(visit: Visit): string {
   const tenantPhone = visit.student?.phone || 'غير متوفر';
   const rentPeriodStr = formatRentPeriod(visit);
 
-  const msg = `مرحباً ${ownerName} 👋
+  const msg = `مرحباً ${ownerName}
 
-✅ تم تأكيد الحجز ودفع المستحقات بنجاح! إليك بيانات المستأجر للتواصل المباشر والربط بينكما:
+تم تأكيد الحجز ودفع المستحقات بنجاح. إليك بيانات المستأجر للتواصل المباشر والربط بينكما:
 
-📋 بيانات المستأجر:
+بيانات المستأجر:
 • الاسم: ${tenantName}
 • رقم الهاتف: ${tenantPhone}
 
-🏠 بيانات الشقة والمعاينة:
+بيانات الشقة والمعاينة:
 • الشقة: ${propTitle}${propNum}
 • الموعد المحدد: ${visit.visit_date} الساعة ${visit.visit_time}
 ${rentPeriodStr ? `• فترة الإيجار المطلوبة: ${rentPeriodStr}\n` : ''}
-📌 ملاحظة هامة:
+ملاحظة هامة:
 في حال لم يتم الاتفاق بينكما بعد المعاينة، يمكنك تفعيل الشقة مرة أخرى وتأجيرها لاحقاً، ولن تُستحق أي رسوم إضافية عن هذه الصفقة.
 
-نتمنى لك التوفيق مع منصة Agarly 🏡`;
+نتمنى لك التوفيق مع منصة Agarly`;
 
   const phone = formatWaPhone(visit.owner?.phone);
   return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;

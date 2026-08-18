@@ -134,7 +134,7 @@ export default function AdminProperties() {
               target="_blank"
               className="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 text-xs font-bold border border-blue-200 transition"
             >
-              👁️ معاينة الشقة والتفاصيل والصور
+              معاينة الشقة والتفاصيل
             </Link>
 
             {p.status === 'pending' && (
@@ -149,7 +149,7 @@ export default function AdminProperties() {
                 {p.status === 'active' && <button onClick={() => setStatus(p.id, 'inactive')} className="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 text-xs font-semibold hover:bg-slate-200">إيقاف مؤقت</button>}
                 {p.status !== 'archived' && <button onClick={() => setStatus(p.id, 'archived')} className="px-3 py-1.5 rounded-lg text-slate-600 bg-slate-50 text-xs font-semibold hover:bg-slate-100 border border-slate-200">أرشفة</button>}
                 <button onClick={() => toggleFeatured(p.id, p.is_featured || false)} className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition ${p.is_featured ? 'bg-amber-100 text-amber-800 border-amber-300' : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border-slate-200'}`}>
-                  {p.is_featured ? '⭐ مميز (إلغاء)' : '⭐ تمييز كـ شقة خاصة'}
+                  {p.is_featured ? 'إلغاء التمييز' : 'تمييز كشقة خاصة'}
                 </button>
               </>
             )}
@@ -159,7 +159,7 @@ export default function AdminProperties() {
               onClick={() => deleteProperty(p.id)}
               className="px-3 py-1.5 rounded-lg bg-red-600 text-white text-xs font-semibold hover:bg-red-700 transition"
             >
-              🗑️ حذف النهائي
+              حذف نهائي
             </button>
           </div>
         </div>

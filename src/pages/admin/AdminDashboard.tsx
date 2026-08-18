@@ -6,7 +6,7 @@ import { useAuth } from '../../contexts/AuthContext';
 
 const links = [
   { to: '/admin', end: true, icon: LayoutDashboard, label: 'نظرة عامة' },
-  { to: '/admin/visits', icon: CalendarDays, label: 'الحجوزات 📋' },
+  { to: '/admin/visits', icon: CalendarDays, label: 'الحجوزات' },
   { to: '/admin/users', icon: Users, label: 'المستخدمين' },
   { to: '/admin/properties', icon: Building2, label: 'العقارات' },
   { to: '/admin/cities', icon: MapPin, label: 'المدن والمناطق' },
@@ -30,8 +30,8 @@ export default function AdminDashboard() {
   return (
     <div className="max-w-7xl mx-auto px-4 py-6 md:py-8">
       <div className="mb-6">
-        <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Admin console</h1>
-        <p className="text-slate-500 text-sm mt-1">Platform operations for Agarly</p>
+        <h1 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white">لوحة تحكم الإدارة</h1>
+        <p className="text-slate-500 dark:text-slate-400 text-xs font-bold mt-1">إدارة منصة وعمليات أجرلي (Agarly)</p>
       </div>
       <div className="grid lg:grid-cols-[220px_1fr] gap-6">
         <aside className="hidden lg:block">

@@ -1,118 +1,151 @@
-@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
-  --color-brand-50: #eff6ff;
-  --color-brand-100: #dbeafe;
-  --color-brand-200: #bfdbfe;
-  --color-brand-300: #93c5fd;
-  --color-brand-400: #60a5fa;
-  --color-brand-500: #3b82f6;
-  --color-brand-600: #2563eb;
-  --color-brand-700: #1d4ed8;
-  --color-brand-800: #1e40af;
-  --color-brand-900: #1e3a8a;
+  --font-sans: 'Cairo', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-heading: 'Cairo', system-ui, -apple-system, sans-serif;
+
+  /* Agarly Brand Core Colors */
+  --color-agarly-amber: #FCB431;
+  --color-agarly-amber-hover: #EAA01C;
+  --color-agarly-amber-light: #FFF8EB;
+  --color-agarly-amber-50: #FFFDF7;
+  --color-agarly-amber-100: #FEF3C7;
+  --color-agarly-amber-200: #FDE68A;
+  --color-agarly-amber-500: #FCB431;
+  --color-agarly-amber-600: #EAA01C;
+  --color-agarly-amber-700: #C7820B;
+
+  --color-agarly-navy: #2B3143;
+  --color-agarly-navy-light: #3D455C;
+  --color-agarly-navy-dark: #1E2230;
+  --color-agarly-navy-50: #F4F6F9;
+  --color-agarly-navy-100: #E4E8F0;
+  --color-agarly-navy-800: #2B3143;
+  --color-agarly-navy-900: #1E2230;
+
+  --color-agarly-midnight: #000616;
+  --color-agarly-midnight-surface: #0A1020;
+  --color-agarly-midnight-card: #111A30;
+  --color-agarly-midnight-border: #1E2B4A;
+
+  /* Backward Compatibility brand tokens */
+  --color-brand-50: #FFF8EB;
+  --color-brand-100: #FEF3C7;
+  --color-brand-200: #FDE68A;
+  --color-brand-300: #FCD34D;
+  --color-brand-400: #FBBF24;
+  --color-brand-500: #FCB431;
+  --color-brand-600: #EAA01C;
+  --color-brand-700: #2B3143;
+  --color-brand-800: #1E2230;
+  --color-brand-900: #000616;
 }
 
 /* Tailwind v4: configure dark mode to use .dark class on <html> */
 @variant dark (&:where(.dark, .dark *));
 
+:root {
+  --font-sans: 'Cairo', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  color-scheme: light;
+}
+
+.dark {
+  color-scheme: dark;
+}
 
 html {
   scroll-behavior: smooth;
+  font-family: 'Cairo', 'Plus Jakarta Sans', system-ui, sans-serif;
 }
 
 body {
-  font-family: var(--font-sans);
-  background: #f8fafc;
-  color: #0f172a;
+  font-family: 'Cairo', 'Plus Jakarta Sans', system-ui, sans-serif;
+  background-color: #F8FAFC;
+  color: #000616;
   -webkit-font-smoothing: antialiased;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.25s cubic-bezier(0.4, 0, 0.2, 1), color 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* ======================== Dark Mode ======================== */
 html.dark body {
-  background: #0f172a;
-  color: #e2e8f0;
+  background-color: #000616;
+  color: #F1F5F9;
 }
 
-html.dark {
-  color-scheme: dark;
-}
-
-/* Dark mode scrollbar */
-html.dark ::-webkit-scrollbar-thumb {
-  background: #334155;
-}
-
-html.dark ::-webkit-scrollbar-track {
-  background: #1e293b;
-}
-
-/* ======================== Tailwind Dark Compatibility ======================== */
-/* Ensure dark: classes work via html.dark selector */
-@layer base {
-  :root {
-    color-scheme: light;
-  }
-
-  .dark {
-    color-scheme: dark;
-  }
-}
-
-#root {
-  min-height: 100vh;
-}
-
+/* Custom Scrollbars */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
+}
+::-webkit-scrollbar-track {
+  background: #F1F5F9;
+}
+html.dark ::-webkit-scrollbar-track {
+  background: #0A1020;
 }
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 999px;
+  background: #CBD5E1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #FCB431;
+}
+html.dark ::-webkit-scrollbar-thumb {
+  background: #2B3143;
+}
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: #FCB431;
 }
 
+/* ======================== Glassmorphism & UI Accents ======================== */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+html.dark .glass-panel {
+  background: rgba(10, 16, 32, 0.82);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(43, 49, 67, 0.7);
+}
+
+.amber-glow {
+  box-shadow: 0 0 25px -5px rgba(252, 180, 49, 0.45);
+}
+
+.amber-glow-sm {
+  box-shadow: 0 0 15px -3px rgba(252, 180, 49, 0.35);
+}
+
+.card-hover-effect {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.card-hover-effect:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 25px -5px rgba(0, 6, 22, 0.08), 0 8px 10px -6px rgba(0, 6, 22, 0.04);
+}
+html.dark .card-hover-effect:hover {
+  box-shadow: 0 20px 30px -8px rgba(0, 0, 0, 0.7), 0 0 20px 0 rgba(252, 180, 49, 0.12);
+}
+
+/* Skeleton Loading */
 .skeleton {
-  background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+  background: linear-gradient(90deg, #e2e8f0 25%, #f8fafc 50%, #e2e8f0 75%);
   background-size: 200% 100%;
-  animation: shimmer 1.4s infinite;
+  animation: shimmer 1.5s infinite;
 }
 
 html.dark .skeleton {
-  background: linear-gradient(90deg, #1e293b 25%, #253447 50%, #1e293b 75%);
+  background: linear-gradient(90deg, #111A30 25%, #1E2B4A 50%, #111A30 75%);
   background-size: 200% 100%;
-}
-
-@layer base {
-  :root {
-    --font-sans: 'Inter', system-ui, sans-serif;
-  }
-  
-  html[dir="rtl"] {
-    --font-sans: 'Cairo', system-ui, sans-serif;
-  }
-
-  body {
-    font-family: var(--font-sans);
-  }
 }
 
 @keyframes shimmer {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
-}
-
-/* Dark mode transition smoothing */
-*, *::before, *::after {
-  transition-property: background-color, border-color, color;
-  transition-duration: 0.2s;
-  transition-timing-function: ease;
-}
-
-/* Override transition for animations to not be affected */
-.animate-spin, .animate-pulse, .animate-bounce {
-  transition: none;
 }

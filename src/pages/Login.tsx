@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Building2, Mail, Lock, User, Phone } from 'lucide-react';
+import { Mail, Lock, User, Phone, Sparkles } from 'lucide-react';
 import supabase from '../lib/supabase';
 import { apiSend } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import type { Profile } from '../contexts/AuthContext';
+import Logo from '../components/Logo';
 
 export default function Login() {
   const [params] = useSearchParams();
@@ -100,43 +101,32 @@ export default function Login() {
           redirectFor();
         }
       } else {
-        // Signup flow
-        if (!firstName.trim()) throw new Error(t('login.err_firstname'));
-        if (!email.trim()) throw new Error('يرجى إدخال البريد الإلكتروني');
-        if (!phone.trim()) throw new Error('يرجى إدخال رقم الهاتف');
-        if (password.length < 8) throw new Error(t('login.err_password_length'));
-        if (password !== confirmPassword) throw new Error(t('login.err_password_match'));
-
-        // Pre-check email and phone uniqueness in profiles database
-        const uniqueCheck = await fetch(`/api/profiles?check=unique&email=${encodeURIComponent(email.trim())}&phone=${encodeURIComponent(phone.trim())}`);
-        if (!uniqueCheck.ok) {
-          const errBody = await uniqueCheck.json().catch(() => ({}));
-          throw new Error(errBody.error || 'البريد الإلكتروني أو رقم الهاتف مستخدم بالفعل بحساب آخر.');
+        if (password !== confirmPassword) {
+          throw new Error('كلمتا المرور غير متطابقتين');
         }
 
-        const effectiveRole = accountType === 'tenant' ? 'tenant' : 'owner';
-        const isBrokerAccount = accountType === 'broker';
+        const effectiveRole = accountType === 'owner' ? 'owner' : accountType === 'broker' ? 'broker' : 'tenant';
+        const isBrokerAccount = accountType === 'broker' || accountType === 'owner';
 
         const { data, error: err } = await supabase.auth.signUp({
           email: email.trim(),
           password,
           options: {
             data: {
-              role: effectiveRole,
-              is_broker_account: isBrokerAccount,
               first_name: firstName.trim(),
               last_name: lastName.trim(),
               phone: phone.trim(),
+              role: effectiveRole,
+              is_broker_account: isBrokerAccount,
             },
           },
         });
 
         let userId = data?.user?.id;
-        if (!userId) {
-          // Email might already be registered in Auth — try signing in
-          const signInRes = await supabase.auth.signInWithPassword({ email: email.trim(), password });
-          if (signInRes.data?.user) {
-            userId = signInRes.data.user.id;
+
+        if (err || !userId) {
+          if (err?.message?.includes('already registered')) {
+            throw new Error('هذا البريد الإلكتروني مسجل بالفعل. يرجى تسجيل الدخول بدلاً من ذلك.');
           } else {
             throw err || new Error(t('login.err_generic'));
           }
@@ -167,34 +157,35 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-10 bg-gradient-to-b from-brand-50 to-slate-50 dark:from-slate-900 dark:to-slate-950">
+    <div className="min-h-[calc(100vh-5rem)] flex items-center justify-center px-4 py-12 bg-slate-50 dark:bg-[#000616] text-slate-900 dark:text-white transition-colors">
       <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="inline-flex w-14 h-14 rounded-2xl bg-brand-600 text-white items-center justify-center shadow-lg shadow-brand-600/20 mb-4">
-            <Building2 className="w-7 h-7" />
-          </div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-            {mode === 'login' ? t('login.welcome_back') : t('login.join')}
+        {/* Brand Logo Header */}
+        <div className="text-center mb-8 flex flex-col items-center">
+          <Logo size="lg" showTagline />
+          <h1 className="text-2xl font-black mt-6 text-slate-900 dark:text-white">
+            {mode === 'login' ? 'مرحباً بك مجدداً في أجرلي' : 'انضم إلى منصة أجرلي'}
           </h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-1 text-sm">
-            {mode === 'login' ? t('login.signin_desc') : t('login.signup_desc')}
+          <p className="text-slate-500 dark:text-slate-400 mt-1 text-xs font-bold">
+            {mode === 'login' ? 'سجل دخولك لمتابعة عقاراتك وحجوزاتك' : 'أنشئ حسابك وابدأ تجربة إيجار سريعة ومضمونة'}
           </p>
         </div>
 
-        <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm p-6 sm:p-8">
+        <div className="bg-white dark:bg-[#111A30] rounded-3xl border border-slate-200/80 dark:border-[#1E2B4A] shadow-xl p-6 sm:p-8">
           {mode === 'signup' && (
-            <div className="grid grid-cols-3 gap-1 p-1 bg-slate-100 dark:bg-slate-700 rounded-xl mb-6">
+            <div className="grid grid-cols-3 gap-1 p-1 bg-slate-100 dark:bg-[#0A1020] rounded-2xl mb-6 border border-slate-200/60 dark:border-[#1E2B4A]">
               {[
-                { type: 'tenant', label: t('login.tenant') || 'مستأجر' },
-                { type: 'owner', label: t('login.owner') || 'مالك شقة' },
-                { type: 'broker', label: 'سمسار' },
+                { type: 'tenant', label: 'طالب / مستأجر' },
+                { type: 'owner', label: 'مالك شقة' },
+                { type: 'broker', label: 'وسيط / سمسار' },
               ].map(({ type, label }) => (
                 <button
                   key={type}
                   type="button"
                   onClick={() => setAccountType(type as any)}
-                  className={`py-2 rounded-lg text-xs font-semibold capitalize transition ${
-                    accountType === type ? 'bg-white dark:bg-slate-600 text-brand-700 dark:text-brand-400 shadow-sm' : 'text-slate-500 dark:text-slate-400'
+                  className={`py-2 rounded-xl text-xs font-black transition ${
+                    accountType === type
+                      ? 'bg-[#FCB431] text-[#000616] shadow-sm'
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
                   {label}
@@ -211,7 +202,7 @@ export default function Login() {
               </div>
             )}
             {mode === 'signup' && (
-              <Field icon={Phone} placeholder="رقم الهاتف (ضروري وفريد)" value={phone} onChange={setPhone} type="tel" required />
+              <Field icon={Phone} placeholder="رقم الهاتف (ضروري للمعاينة)" value={phone} onChange={setPhone} type="tel" required />
             )}
             <Field
               icon={mode === 'login' ? User : Mail}
@@ -227,31 +218,34 @@ export default function Login() {
             )}
 
             {error && (
-              <div className="text-sm text-red-600 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 rounded-xl px-3 py-2">{error}</div>
+              <div className="text-xs font-bold text-rose-600 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 rounded-xl px-3.5 py-2.5">
+                {error}
+              </div>
             )}
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 rounded-xl bg-brand-600 text-white font-semibold hover:bg-brand-700 disabled:opacity-60 transition"
+              className="w-full py-3.5 rounded-2xl bg-[#FCB431] hover:bg-[#EAA01C] text-[#000616] font-black text-sm transition shadow-md disabled:opacity-60 flex items-center justify-center gap-2"
             >
-              {loading ? t('login.wait') : mode === 'login' ? t('login.signin') : t('login.create_account')}
+              <Sparkles className="w-4 h-4" />
+              <span>{loading ? t('login.wait') : mode === 'login' ? t('login.signin') : t('login.create_account')}</span>
             </button>
           </form>
 
-          <p className="mt-6 text-center text-sm text-slate-500 dark:text-slate-400">
+          <p className="mt-6 text-center text-xs font-bold text-slate-500 dark:text-slate-400">
             {mode === 'login' ? (
               <>
-                {t('login.new_here')}{' '}
-                <button type="button" className="text-brand-600 font-semibold" onClick={() => { setMode('signup'); setError(''); }}>
-                  {t('login.create_account')}
+                ليس لديك حساب بعد؟{' '}
+                <button type="button" className="text-[#FCB431] hover:underline" onClick={() => { setMode('signup'); setError(''); }}>
+                  أنشئ حساباً جديداً
                 </button>
               </>
             ) : (
               <>
-                {t('login.have_account')}{' '}
-                <button type="button" className="text-brand-600 font-semibold" onClick={() => { setMode('login'); setError(''); }}>
-                  {t('login.signin')}
+                لديك حساب بالفعل؟{' '}
+                <button type="button" className="text-[#FCB431] hover:underline" onClick={() => { setMode('login'); setError(''); }}>
+                  سجل دخولك الآن
                 </button>
               </>
             )}
@@ -259,7 +253,9 @@ export default function Login() {
         </div>
 
         <p className="text-center mt-6">
-          <Link to="/" className="text-sm text-slate-500 hover:text-brand-600">{t('login.back_home')}</Link>
+          <Link to="/" className="text-xs font-bold text-slate-500 hover:text-[#FCB431] transition">
+            العودة للرئيسية
+          </Link>
         </p>
       </div>
     </div>
@@ -278,14 +274,14 @@ function Field({
 }) {
   return (
     <div className="relative">
-      <Icon className="w-4 h-4 absolute start-3 top-1/2 -translate-y-1/2 text-slate-400" />
+      <Icon className="w-4 h-4 absolute start-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
       <input
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         required={required}
-        className="w-full ps-10 pe-3 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 dark:text-white focus:bg-white dark:focus:bg-slate-600 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm"
+        className="w-full ps-10 pe-4 py-3 rounded-2xl border border-slate-200 dark:border-[#1E2B4A] bg-slate-50 dark:bg-[#0A1020] text-slate-900 dark:text-white text-xs font-bold focus:bg-white dark:focus:bg-[#0A1020] focus:ring-2 focus:ring-[#FCB431] outline-none transition"
       />
     </div>
   );

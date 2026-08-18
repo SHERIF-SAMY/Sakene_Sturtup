@@ -76,7 +76,7 @@ export default function BrokerProperties() {
               <p className="text-sm text-slate-500">{p.district}</p>
               <div className="flex items-center gap-2 mt-1">
                 <p className="text-sm font-medium text-brand-700">
-                  from {price ? formatPrice(price) : '—'}
+                  تبدأ من {price ? formatPrice(price) : '—'}
                 </p>
                 <span className={`text-xs px-2.5 py-0.5 rounded-full font-bold capitalize ${
                   p.status === 'active' ? 'bg-green-100 text-green-800' :
@@ -87,7 +87,7 @@ export default function BrokerProperties() {
                   'bg-slate-100 text-slate-700'
                 }`}>
                   {p.status === 'active' ? 'نشطة ومتاحة' :
-                   p.status === 'pending' ? 'قيد مراجعة الأدمن' :
+                   p.status === 'pending' ? 'قيد مراجعة الإدارة' :
                    p.status === 'inactive' ? 'موقوفة مؤقتاً' :
                    p.status === 'archived' ? 'مؤرشفة' :
                    p.status === 'rejected' ? 'مرفوضة' : p.status}
@@ -95,7 +95,7 @@ export default function BrokerProperties() {
               </div>
               {p.status === 'rejected' && p.rejection_reason && (
                 <p className="text-xs text-red-600 mt-2 bg-red-50 p-2 rounded-lg">
-                  <span className="font-semibold">Admin feedback:</span> {p.rejection_reason}
+                  <span className="font-semibold">ملاحظات الإدارة:</span> {p.rejection_reason}
                 </p>
               )}
             </div>
@@ -105,7 +105,7 @@ export default function BrokerProperties() {
                   onClick={() => setStatus(p.id, 'pending')}
                   className="text-xs font-bold px-3 py-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm transition"
                 >
-                  إعادة العرض للتأجير 🔄
+                  إعادة العرض للتأجير
                 </button>
               )}
               {p.status === 'active' && (

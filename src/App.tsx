@@ -36,6 +36,8 @@ import AdminVisits from './pages/admin/AdminVisits';
 import AdminNotifications from './pages/admin/AdminNotifications';
 import AdminInbox from './pages/admin/AdminInbox';
 
+import DesignSystemGuide from './pages/DesignSystemGuide';
+
 export default function App() {
   return (
     <AuthProvider>
@@ -48,6 +50,7 @@ export default function App() {
             <Route path="search" element={<SearchPage />} />
             <Route path="properties/:id" element={<PropertyDetails />} />
             <Route path="login" element={<Login />} />
+            <Route path="design-system" element={<DesignSystemGuide />} />
 
             <Route
               path="dashboard"

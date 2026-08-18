@@ -392,7 +392,7 @@ export default function PropertyDetails() {
                                 'bg-slate-100 text-slate-400 border-slate-200 line-through'
                               }`}
                             >
-                              🛏️ سرير {bed.bed_number} ({
+                              سرير {bed.bed_number} ({
                                 bed.status === 'available' ? 'متاح' :
                                 bed.status === 'reserved' ? 'محجوز مؤقتاً' : 'مشغول'
                               })
@@ -516,7 +516,7 @@ export default function PropertyDetails() {
 
             {isOwnerOrBroker ? (
               <div className="mt-5 p-4 bg-amber-50 border border-amber-200 rounded-2xl text-amber-900 text-sm">
-                <p className="font-semibold text-center">💡 تنبيه للمالك والوسيط</p>
+                <p className="font-semibold text-center">تنبيه للمالك والوسيط</p>
                 <p className="mt-1 text-xs text-amber-800 text-center">
                   عند تأجير الشقة عن طريق المنصة، تفرض المنصة رسوم خدمة مقدارها <strong>200 جنيه مصري</strong> فقط.
                 </p>
@@ -613,7 +613,7 @@ export default function PropertyDetails() {
 
               {isSelectedListingSharedBed && (
                 <div className="p-3.5 bg-brand-50/40 dark:bg-brand-950/10 rounded-xl border border-brand-100 dark:border-brand-900 space-y-3">
-                  <p className="text-xs font-bold text-brand-900 dark:text-brand-400">🚪 اختر الغرفة وعدد الأسرة المطلوبة</p>
+                  <p className="text-xs font-bold text-brand-900 dark:text-brand-400">اختر الغرفة وعدد الأسرة المطلوبة</p>
                   <div className="space-y-2 max-h-48 overflow-y-auto">
                     {(property?.rooms || []).map((room) => {
                       const available = room.beds ? room.beds.filter((b: any) => b.status === 'available').length : 0;
@@ -670,7 +670,7 @@ export default function PropertyDetails() {
 
               {/* Rent Duration Inputs */}
               <div className="p-3 bg-brand-50/60 rounded-xl border border-brand-100 space-y-2">
-                <p className="text-xs font-bold text-brand-900">🗓️ فترة الإيجار المطلوبة (اختياري)</p>
+                <p className="text-xs font-bold text-brand-900">فترة الإيجار المطلوبة (اختياري)</p>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
                     <label className="text-[11px] text-slate-600">تاريخ بدء الإيجار</label>

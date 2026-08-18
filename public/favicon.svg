@@ -1,6 +1,20 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
-  <rect width="64" height="64" rx="16" fill="#2563EB"/>
-  <path d="M16 40V28l16-12 16 12v12" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M26 40v-8h12v8" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="32" cy="24" r="2.5" fill="white"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <!-- Agarly Slate Navy Hexagon Badge -->
+  <path
+    d="M50 6 L88 28 C92 30.5 94.5 35 94.5 40 L94.5 60 C94.5 65 92 69.5 88 72 L50 94 C46.5 96 42.5 96 39 94 L12 72 C8 69.5 5.5 65 5.5 60 L5.5 40 C5.5 35 8 30.5 12 28 L50 6 Z"
+    fill="#2B3143"
+  />
+  
+  <!-- Agarly Warm Amber Roof Peak & House Silhouette -->
+  <path
+    d="M50 25 L76 46 C77.5 47.2 76.5 49.5 74.5 49.5 L67.5 49.5 L67.5 73 C67.5 75 66 76.5 64 76.5 L36 76.5 C34 76.5 32.5 75 32.5 73 L32.5 49.5 L25.5 49.5 C23.5 49.5 22.5 47.2 24 46 L50 25 Z"
+    fill="#FCB431"
+  />
+
+  <!-- Center Keyhole / Archway Door -->
+  <path
+    d="M44 76.5 L44 57 C44 53.7 46.7 51 50 51 C53.3 51 56 53.7 56 57 L56 76.5 Z"
+    fill="#FFFFFF"
+    opacity="0.95"
+  />
 </svg>
