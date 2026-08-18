@@ -358,8 +358,71 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ── 2. "لمن منصة اجرلي؟" (3 PILLARS SECTION) ─────────────────── */}
-      <section className="max-w-7xl mx-auto px-4 py-16 sm:py-20">
+      {/* ── 2. FEATURED & AVAILABLE APARTMENTS (DIRECTLY UNDER HERO) ──── */}
+      <section className="max-w-7xl mx-auto px-4 py-12 sm:py-16">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 gap-4">
+          <div>
+            <span className="text-xs font-bold px-3 py-1 rounded-full bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 mb-2 inline-flex items-center gap-1">
+              <Star className="w-3.5 h-3.5 fill-current text-[#FCB431]" /> سكن مميز وموصى به
+            </span>
+            <h2 className="text-3xl font-black text-slate-900 dark:text-white">عقارات وشقق مميزة</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">أعلى التقييمات وقريبة من المجمعات الجامعية والمواصلات</p>
+          </div>
+          <Link
+            to="/search"
+            className="inline-flex items-center gap-1.5 text-xs font-black text-[#2B3143] dark:text-[#FCB431] hover:underline"
+          >
+            <span>استعراض كافة الخيارات</span>
+            <ChevronRight className="w-4 h-4" />
+          </Link>
+        </div>
+
+        {loading ? (
+          <LoadingSpinner />
+        ) : featured.length === 0 ? (
+          <div className="text-center py-12 text-slate-400 bg-white dark:bg-[#111A30] rounded-3xl border border-slate-200 dark:border-[#1E2B4A]">
+            <Building2 className="w-12 h-12 mx-auto mb-3 opacity-40" />
+            <p className="text-sm font-bold">لا توجد شقق مميزة حالياً</p>
+          </div>
+        ) : (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {featured.map((p) => (
+              <ApartmentCard key={p.id} property={p} />
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* ── 3. LATEST APARTMENTS (DIRECTLY UNDER FEATURED) ─────────────── */}
+      {recent.length > 0 && (
+        <section className="max-w-7xl mx-auto px-4 pb-14 sm:pb-16">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 gap-4">
+            <div>
+              <span className="text-xs font-bold px-3 py-1 rounded-full bg-slate-100 dark:bg-[#111A30] text-slate-700 dark:text-slate-300 mb-2 inline-block">
+                جديد الإعلانات
+              </span>
+              <h2 className="text-3xl font-black text-slate-900 dark:text-white">أحدث الشقق والغرف المتاحة</h2>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">تمت إضافتها مؤخراً ومتاحة للمعاينة الفورية</p>
+            </div>
+            <Link
+              to="/search"
+              className="px-5 py-2.5 rounded-xl bg-[#2B3143] dark:bg-[#FCB431] text-white dark:text-[#000616] font-bold text-xs hover:opacity-95 transition flex items-center gap-1.5 shadow-sm"
+            >
+              <span>تصفح كافة الشقق</span>
+              <ChevronRight className="w-4 h-4" />
+            </Link>
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {recent.map((p) => (
+              <ApartmentCard key={p.id} property={p} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ── 4. "لمن منصة اجرلي؟" (3 PILLARS SECTION) ─────────────────── */}
+      <section className="max-w-7xl mx-auto px-4 py-14 sm:py-16 border-t border-slate-200/80 dark:border-[#1E2B4A]">
         <div className="text-center max-w-2xl mx-auto mb-12">
           <span className="text-xs font-black uppercase tracking-wider text-[#FCB431] bg-[#FFF8EB] dark:bg-[#111A30] px-3.5 py-1 rounded-full border border-amber-200 dark:border-[#1E2B4A] inline-block mb-3">
             تجربة مصممة للجميع
@@ -441,7 +504,7 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ── 3. "مميزات منصة اجرلي" (CORE FEATURES) ───────────────────── */}
+      {/* ── 4. "مميزات منصة اجرلي" (CORE FEATURES) ───────────────────── */}
       <section className="bg-[#2B3143] text-white py-16 sm:py-20 relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 relative z-10">
           <div className="text-center max-w-2xl mx-auto mb-14">
@@ -496,7 +559,7 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ── 4. "عن اجرلي" (ABOUT STORY & VISION CARD) ────────────────── */}
+      {/* ── 5. "عن اجرلي" (ABOUT STORY & VISION CARD) ────────────────── */}
       <section className="max-w-7xl mx-auto px-4 py-16 sm:py-20">
         <div className="bg-[#FCB431] rounded-3xl p-8 sm:p-12 text-[#000616] relative overflow-hidden shadow-xl">
           <div className="absolute top-0 right-0 w-96 h-96 bg-white/15 rounded-full blur-3xl pointer-events-none" />
@@ -557,7 +620,7 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ── 5. THE OLD WAY VS THE AGARLY WAY (GEN-Z CONTRAST) ────────── */}
+      {/* ── 6. THE OLD WAY VS THE AGARLY WAY (GEN-Z CONTRAST) ────────── */}
       <section className="bg-slate-50 dark:bg-[#0A1020] border-y border-slate-200 dark:border-[#1E2B4A] py-16 sm:py-20">
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center max-w-2xl mx-auto mb-12">
@@ -638,40 +701,6 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ── 6. FEATURED APARTMENTS CAROUSEL/GRID ──────────────────────── */}
-      <section className="max-w-7xl mx-auto px-4 py-16 sm:py-20">
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-10 gap-4">
-          <div>
-            <span className="text-xs font-bold px-3 py-1 rounded-full bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 mb-2 inline-flex items-center gap-1">
-              <Star className="w-3.5 h-3.5 fill-current" /> سكن مميز وموصى به
-            </span>
-            <h2 className="text-3xl font-black text-slate-900 dark:text-white">عقارات وشقق مختارة</h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">أعلى التقييمات وقريبة من المجمعات الجامعية</p>
-          </div>
-          <Link
-            to="/search"
-            className="inline-flex items-center gap-1.5 text-xs font-black text-[#2B3143] dark:text-[#FCB431] hover:underline"
-          >
-            <span>استعراض كافة الخيارات</span>
-            <ChevronRight className="w-4 h-4" />
-          </Link>
-        </div>
-
-        {loading ? (
-          <LoadingSpinner />
-        ) : featured.length === 0 ? (
-          <div className="text-center py-12 text-slate-400 bg-white dark:bg-[#111A30] rounded-3xl border border-slate-200 dark:border-[#1E2B4A]">
-            <Building2 className="w-12 h-12 mx-auto mb-3 opacity-40" />
-            <p className="text-sm font-bold">لا توجد شقق مميزة حالياً</p>
-          </div>
-        ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {featured.map((p) => (
-              <ApartmentCard key={p.id} property={p} />
-            ))}
-          </div>
-        )}
-      </section>
 
       {/* ── 7. POPULAR UNIVERSITIES & HUBS ────────────────────────────── */}
       {unis.length > 0 && (
@@ -710,33 +739,6 @@ export default function Landing() {
         </section>
       )}
 
-      {/* ── 8. LATEST APARTMENTS ──────────────────────────────────────── */}
-      {recent.length > 0 && (
-        <section className="max-w-7xl mx-auto px-4 py-16">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-10 gap-4">
-            <div>
-              <span className="text-xs font-bold px-3 py-1 rounded-full bg-slate-100 dark:bg-[#111A30] text-slate-700 dark:text-slate-300 mb-2 inline-block">
-                جديد الإعلانات
-              </span>
-              <h2 className="text-3xl font-black text-slate-900 dark:text-white">أحدث الشقق والغرف المتاحة</h2>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium">تمت إضافتها مؤخراً ومتاحة للمعاينة الفورية</p>
-            </div>
-            <Link
-              to="/search"
-              className="px-5 py-2.5 rounded-xl bg-[#2B3143] dark:bg-[#FCB431] text-white dark:text-[#000616] font-bold text-xs hover:opacity-95 transition flex items-center gap-1.5 shadow-sm"
-            >
-              <span>تصفح كافة الشقق</span>
-              <ChevronRight className="w-4 h-4" />
-            </Link>
-          </div>
-
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {recent.map((p) => (
-              <ApartmentCard key={p.id} property={p} />
-            ))}
-          </div>
-        </section>
-      )}
 
       {/* ── 9. OWNER & BROKER GROWTH CTA ──────────────────────────────── */}
       <section className="max-w-7xl mx-auto px-4 py-12">
