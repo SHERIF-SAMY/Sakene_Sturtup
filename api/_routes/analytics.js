@@ -3,12 +3,12 @@ import { requireAuth } from '../_auth-helper.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') return res.status(204).end();
 
   try {
-    if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
+    if (req.method !== 'GET' && req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
     const { scope, broker_id, user_id } = req.query;
 
@@ -16,17 +16,33 @@ export default async function handler(req, res) {
       const auth = await requireAuth(req, res, ['admin', 'super_admin']);
       if (!auth) return;
 
-      // Handle resetting stats if requested by super_admin
-      if (req.method === 'POST' || req.query.action === 'reset_earnings') {
+      // Handle resetting stats if requested by super_admin (POST request)
+      if (req.method === 'POST' && req.query.action === 'reset_earnings') {
         if (auth.role !== 'super_admin') return res.status(403).json({ error: 'Super Admin only' });
         const targetAdminId = req.query.admin_id;
-        let query = supabase.from('admin_earnings').delete();
+
+        // Get list of admins to reset
+        let adminIds = [];
         if (targetAdminId) {
-          query = query.eq('admin_id', targetAdminId);
+          adminIds = [targetAdminId];
         } else {
-          query = query.neq('id', 0); // Delete all
+          const { data: allAdmins } = await supabase.from('profiles').select('id').in('role', ['admin', 'super_admin']);
+          adminIds = (allAdmins || []).map(a => a.id);
         }
-        await query;
+
+        // Insert a reset marker for each admin
+        const now = new Date().toISOString();
+        const resetMarkers = adminIds.map(aid => ({
+          admin_id: aid,
+          visit_id: null,
+          amount: 0,
+          operation: 'reset',
+          created_at: now,
+        }));
+        if (resetMarkers.length) {
+          await supabase.from('admin_earnings').insert(resetMarkers);
+        }
+
         return res.status(200).json({ success: true, message: 'Earnings reset' });
       }
 
@@ -38,7 +54,7 @@ export default async function handler(req, res) {
         supabase.from('cities').select('id', { count: 'exact', head: true }),
         supabase.from('reviews').select('id', { count: 'exact', head: true }),
         supabase.from('profiles').select('id, first_name, last_name, email, role').in('role', ['admin', 'super_admin']),
-        supabase.from('admin_earnings').select('*'),
+        supabase.from('admin_earnings').select('*').order('created_at', { ascending: true }),
         supabase.from('visits').select('id, status, created_at, visit_date, processed_by_admin_id').eq('status', 'completed'),
       ]);
 
@@ -54,17 +70,25 @@ export default async function handler(req, res) {
         if (roles[r.role] !== undefined) roles[r.role]++;
       });
 
+      const allEarnings = earningsData.data || [];
       const completedVisits = completedVisitsData.data || [];
-      const totalCompletedVisits = completedVisits.length;
-      const totalRevenue = totalCompletedVisits * 400; // 400 EGP per completed visit
 
-      const earnings = earningsData.data || [];
-
-      // Calculate per-admin stats directly from completedVisits and admin_earnings
+      // Calculate per-admin stats using reset marker timestamps
       const adminStats = (adminProfiles.data || []).map(adm => {
-        const admCompletedVisits = completedVisits.filter(v => v.processed_by_admin_id === adm.id);
-        const admEarnings = earnings.filter(e => e.admin_id === adm.id);
-        const completedCount = Math.max(admCompletedVisits.length, admEarnings.length);
+        // Find the latest reset marker for this admin
+        const adminResets = allEarnings.filter(e => e.admin_id === adm.id && e.operation === 'reset');
+        const lastResetAt = adminResets.length > 0
+          ? adminResets[adminResets.length - 1].created_at
+          : null;
+
+        // Count completed visits AFTER the last reset (or all if no reset)
+        const admCompletedVisits = completedVisits.filter(v => {
+          if (v.processed_by_admin_id !== adm.id) return false;
+          if (!lastResetAt) return true;
+          return v.created_at > lastResetAt;
+        });
+
+        const completedCount = admCompletedVisits.length;
         const totalEarnings = completedCount * 400;
 
         return {
@@ -75,6 +99,20 @@ export default async function handler(req, res) {
           completedCount,
         };
       });
+
+      // Total revenue = sum of all admin counts after their respective resets
+      const totalCompletedVisits = adminStats.reduce((sum, adm) => sum + adm.completedCount, 0)
+        // Fallback: if no processed_by_admin_id is set, count all completed visits after global reset
+        || (() => {
+          const globalResets = allEarnings.filter(e => e.operation === 'reset');
+          const lastGlobalReset = globalResets.length > 0 ? globalResets[globalResets.length - 1].created_at : null;
+          return completedVisits.filter(v => !lastGlobalReset || v.created_at > lastGlobalReset).length;
+        })();
+
+      const totalRevenue = totalCompletedVisits * 400;
+
+      // Only pass non-reset earnings records to frontend
+      const earnings = allEarnings.filter(e => e.operation !== 'reset');
 
       return res.status(200).json({
         users: users.count || 0,
