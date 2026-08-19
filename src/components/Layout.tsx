@@ -194,9 +194,9 @@ export default function Layout() {
         : '/dashboard';
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F8FAFC] dark:bg-[#000616] text-slate-900 dark:text-slate-100 transition-colors">
+    <div className="min-h-screen flex flex-col bg-[#F8FAFC] dark:bg-[#000616] text-slate-900 dark:text-slate-100 transition-colors w-full max-w-full overflow-x-hidden">
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-white/90 dark:bg-[#0A1020]/90 backdrop-blur-md border-b border-slate-100 dark:border-[#1E2B4A] transition-colors">
+      <header className="sticky top-0 z-40 bg-white/90 dark:bg-[#0A1020]/90 backdrop-blur-md border-b border-slate-100 dark:border-[#1E2B4A] transition-colors w-full">
         <div className="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between gap-4">
           <Logo size="md" />
 

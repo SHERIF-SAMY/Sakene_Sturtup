@@ -341,7 +341,7 @@ export default function Landing() {
                   const isVerified = heroProperty?.broker_profiles?.verified_badge;
 
                   return (
-                    <Link to={heroProperty ? `/property/${heroProperty.id}` : '/search'} className="block">
+                    <Link to={heroProperty ? `/properties/${heroProperty.id}` : '/search'} className="block">
                       <div className="relative rounded-3xl overflow-hidden border-2 border-[#1E2B4A] shadow-2xl bg-[#111A30] group cursor-pointer">
                         <img
                           src={heroImg}

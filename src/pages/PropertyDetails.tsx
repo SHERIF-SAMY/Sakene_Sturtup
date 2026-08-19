@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
   BadgeCheck, Bath, BedDouble, Calendar, Heart, MapPin, Ruler,
-  Share2, Star, Wifi, ChevronLeft, ChevronRight, User,
+  Share2, Star, Wifi, ChevronLeft, ChevronRight, User, Maximize2, X,
 } from 'lucide-react';
 import { apiGet, apiSend, formatPrice, listingTypeLabel } from '../lib/api';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -66,6 +66,7 @@ export default function PropertyDetails() {
   const [property, setProperty] = useState<(Property & { property_number?: number }) | null>(null);
   const [loading, setLoading] = useState(true);
   const [imgIdx, setImgIdx] = useState(0);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
   const [favorited, setFavorited] = useState(false);
   const [showBook, setShowBook] = useState(false);
   const [selectedListing, setSelectedListing] = useState<number | null>(null);
@@ -119,6 +120,17 @@ export default function PropertyDetails() {
     }
     return [...imgs].sort((a, b) => Number(b.is_cover) - Number(a.is_cover));
   }, [property]);
+
+  useEffect(() => {
+    if (!lightboxOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setLightboxOpen(false);
+      if (e.key === 'ArrowRight') setImgIdx((i) => (i + 1) % images.length);
+      if (e.key === 'ArrowLeft') setImgIdx((i) => (i - 1 + images.length) % images.length);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [lightboxOpen, images.length]);
 
   const activeListings = (property?.listings || []).filter((l) => l.status === 'active');
 
@@ -263,7 +275,7 @@ export default function PropertyDetails() {
   ];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-6 md:py-8">
+    <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 md:py-8 w-full max-w-full min-w-0 overflow-x-hidden">
       <button onClick={() => navigate(-1)} className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-brand-600 mb-4">
         <ChevronLeft className="w-4 h-4" /> رجوع
       </button>
@@ -274,44 +286,96 @@ export default function PropertyDetails() {
         </div>
       )}
 
-      <div className="grid lg:grid-cols-[1.4fr_1fr] gap-6">
-        <div>
-          <div className="relative rounded-3xl overflow-hidden bg-slate-100 aspect-[16/11]">
-            <img src={images[imgIdx]?.image_url} alt={property.title} className="w-full h-full object-cover" />
+      <div className="grid lg:grid-cols-12 gap-6 lg:gap-8 items-start w-full min-w-0">
+        {/* Main Content Column (Gallery, Details, Description, Rooms, Reviews) */}
+        <div className="lg:col-span-7 xl:col-span-8 w-full min-w-0">
+          {/* Main Image Gallery */}
+          <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden bg-slate-900 aspect-[4/3] sm:aspect-[16/10] md:aspect-[16/11] max-h-[60vh] md:max-h-[70vh] w-full shadow-md group">
+            <img
+              src={images[imgIdx]?.image_url}
+              alt={property.title}
+              onClick={() => setLightboxOpen(true)}
+              className="w-full h-full object-cover select-none cursor-zoom-in transition-transform duration-300 group-hover:scale-[1.02]"
+            />
+
+            {/* Expand button top-left */}
+            <button
+              type="button"
+              onClick={() => setLightboxOpen(true)}
+              className="absolute top-3 left-3 bg-black/50 hover:bg-black/80 text-white backdrop-blur-md px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-lg transition active:scale-95 z-10"
+              aria-label="عرض الصورة بالحجم الكامل"
+            >
+              <Maximize2 className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">عرض كامل</span>
+            </button>
+
             {images.length > 1 && (
               <>
                 <button
-                  onClick={() => setImgIdx((i) => (i - 1 + images.length) % images.length)}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 flex items-center justify-center shadow"
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setImgIdx((i) => (i - 1 + images.length) % images.length);
+                  }}
+                  className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-black/40 hover:bg-black/70 text-white backdrop-blur-md flex items-center justify-center shadow-lg transition active:scale-95 z-10"
+                  aria-label="الصورة السابقة"
                 >
                   <ChevronLeft className="w-5 h-5" />
                 </button>
                 <button
-                  onClick={() => setImgIdx((i) => (i + 1) % images.length)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 flex items-center justify-center shadow"
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setImgIdx((i) => (i + 1) % images.length);
+                  }}
+                  className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-black/40 hover:bg-black/70 text-white backdrop-blur-md flex items-center justify-center shadow-lg transition active:scale-95 z-10"
+                  aria-label="الصورة التالية"
                 >
                   <ChevronRight className="w-5 h-5" />
                 </button>
+
+                {/* Counter & Indicator Bar */}
+                <div className="absolute bottom-3 inset-x-3 flex items-center justify-between pointer-events-none z-10">
+                  <button
+                    type="button"
+                    onClick={() => setLightboxOpen(true)}
+                    className="pointer-events-auto bg-black/60 hover:bg-black/80 backdrop-blur-md px-3 py-1 rounded-full text-white text-xs font-bold shadow-md transition flex items-center gap-1"
+                  >
+                    <Maximize2 className="w-3 h-3" />
+                    <span>{imgIdx + 1} / {images.length}</span>
+                  </button>
+
+                  {/* Dots indicator with overflow protection */}
+                  <div className="max-w-[60%] overflow-x-auto scrollbar-none flex items-center gap-1.5 px-2.5 py-1.5 bg-black/40 backdrop-blur-md rounded-full pointer-events-auto">
+                    {images.map((_, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => setImgIdx(i)}
+                        className={`h-1.5 rounded-full transition-all shrink-0 ${
+                          i === imgIdx ? 'w-4 bg-amber-400' : 'w-1.5 bg-white/60 hover:bg-white'
+                        }`}
+                        aria-label={`انتقل للصورة ${i + 1}`}
+                      />
+                    ))}
+                  </div>
+                </div>
               </>
             )}
-            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
-              {images.map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setImgIdx(i)}
-                  className={`w-2 h-2 rounded-full ${i === imgIdx ? 'bg-white' : 'bg-white/50'}`}
-                />
-              ))}
-            </div>
           </div>
 
+          {/* Thumbnails list */}
           {images.length > 1 && (
-            <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+            <div className="mt-3 flex gap-2 overflow-x-auto pb-1.5 scrollbar-none snap-x w-full">
               {images.map((img, i) => (
                 <button
                   key={i}
+                  type="button"
                   onClick={() => setImgIdx(i)}
-                  className={`shrink-0 w-20 h-16 rounded-xl overflow-hidden border-2 ${i === imgIdx ? 'border-brand-600' : 'border-transparent'}`}
+                  onDoubleClick={() => setLightboxOpen(true)}
+                  className={`shrink-0 w-16 h-14 sm:w-20 sm:h-16 rounded-xl overflow-hidden border-2 transition snap-start ${
+                    i === imgIdx ? 'border-amber-400 ring-2 ring-amber-400/30' : 'border-transparent opacity-70 hover:opacity-100'
+                  }`}
                 >
                   <img src={img.image_url} alt="" className="w-full h-full object-cover" />
                 </button>
@@ -319,38 +383,117 @@ export default function PropertyDetails() {
             </div>
           )}
 
-          <div className="mt-6 bg-white rounded-3xl border border-slate-100 p-6">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <div className="flex items-center gap-2">
-                  <h1 className="text-2xl md:text-3xl font-bold text-slate-900">{property.title}</h1>
+          {/* Fullscreen Lightbox Modal */}
+          {lightboxOpen && (
+            <div
+              className="fixed inset-0 z-50 bg-black/95 backdrop-blur-xl flex flex-col justify-between p-4 sm:p-6 animate-in fade-in duration-200"
+              onClick={() => setLightboxOpen(false)}
+            >
+              {/* Lightbox Header Bar */}
+              <div className="flex items-center justify-between z-20" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center gap-2 bg-white/10 px-3.5 py-1.5 rounded-full text-white text-xs font-bold backdrop-blur-md">
+                  <span>صورة {imgIdx + 1} من {images.length}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setLightboxOpen(false)}
+                  className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center backdrop-blur-md transition active:scale-95"
+                  aria-label="إغلاق"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              {/* Main Full-Size Image Container */}
+              <div className="relative flex-1 flex items-center justify-center my-2 sm:my-4 select-none min-h-0" onClick={(e) => e.stopPropagation()}>
+                <img
+                  src={images[imgIdx]?.image_url}
+                  alt={property.title}
+                  className="max-h-[82vh] max-w-[95vw] w-auto h-auto object-contain rounded-2xl shadow-2xl transition-all duration-300"
+                />
+
+                {images.length > 1 && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setImgIdx((i) => (i - 1 + images.length) % images.length)}
+                      className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/60 hover:bg-black/80 text-white backdrop-blur-md flex items-center justify-center shadow-xl transition active:scale-95 z-30 border border-white/10"
+                      aria-label="الصورة السابقة"
+                    >
+                      <ChevronLeft className="w-6 h-6" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setImgIdx((i) => (i + 1) % images.length)}
+                      className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/60 hover:bg-black/80 text-white backdrop-blur-md flex items-center justify-center shadow-xl transition active:scale-95 z-30 border border-white/10"
+                      aria-label="الصورة التالية"
+                    >
+                      <ChevronRight className="w-6 h-6" />
+                    </button>
+                  </>
+                )}
+              </div>
+
+              {/* Bottom Thumbnails Navigation */}
+              {images.length > 1 && (
+                <div className="flex justify-center z-20" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex gap-2 overflow-x-auto max-w-full pb-1 scrollbar-none px-4">
+                    {images.map((img, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => setImgIdx(i)}
+                        className={`shrink-0 w-14 h-12 rounded-xl overflow-hidden border-2 transition ${
+                          i === imgIdx ? 'border-amber-400 scale-105 opacity-100 ring-2 ring-amber-400/40' : 'border-transparent opacity-40 hover:opacity-80'
+                        }`}
+                      >
+                        <img src={img.image_url} alt="" className="w-full h-full object-cover" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="mt-5 sm:mt-6 bg-white dark:bg-[#111A30] rounded-2xl sm:rounded-3xl border border-slate-100 dark:border-[#1E2B4A] p-4 sm:p-6 shadow-sm w-full min-w-0">
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 min-w-0">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h1 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white">{property.title}</h1>
                   {property.property_number && (
-                    <span className="px-3 py-1 bg-brand-100 text-brand-800 text-sm font-bold rounded-full">
+                    <span className="px-3 py-1 bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 text-xs font-bold rounded-full">
                       شقة رقم #{property.property_number}
                     </span>
                   )}
                 </div>
-                <p className="mt-2 flex items-center gap-1.5 text-slate-500">
-                  <MapPin className="w-4 h-4" />
+                <p className="mt-2 flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400 font-medium">
+                  <MapPin className="w-4 h-4 text-amber-500 shrink-0" />
                   {property.address || property.district}
                   {property.cities?.name ? `, ${property.cities.name}` : ''}
                   {property.universities?.name ? ` · بالقرب من ${property.universities.name}` : ''}
                 </p>
               </div>
               <div className="flex gap-2">
-                <button onClick={toggleFav} className="w-11 h-11 rounded-xl border border-slate-200 flex items-center justify-center hover:bg-slate-50">
-                  <Heart className={`w-5 h-5 ${favorited ? 'fill-red-500 text-red-500' : 'text-slate-600'}`} />
+                <button
+                  onClick={toggleFav}
+                  className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl border border-slate-200 dark:border-[#1E2B4A] flex items-center justify-center hover:bg-slate-50 dark:hover:bg-[#0A1020] transition"
+                  aria-label="المفضلة"
+                >
+                  <Heart className={`w-5 h-5 ${favorited ? 'fill-rose-500 text-rose-500' : 'text-slate-600 dark:text-slate-300'}`} />
                 </button>
                 <button
                   onClick={() => navigator.clipboard?.writeText(window.location.href)}
-                  className="w-11 h-11 rounded-xl border border-slate-200 flex items-center justify-center hover:bg-slate-50"
+                  className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl border border-slate-200 dark:border-[#1E2B4A] flex items-center justify-center hover:bg-slate-50 dark:hover:bg-[#0A1020] transition"
+                  aria-label="مشاركة"
                 >
-                  <Share2 className="w-5 h-5 text-slate-600" />
+                  <Share2 className="w-5 h-5 text-slate-600 dark:text-slate-300" />
                 </button>
               </div>
             </div>
 
-            <div className="mt-5 grid grid-cols-2 sm:grid-cols-5 gap-3">
+            {/* Property Meta Specs */}
+            <div className="mt-5 grid grid-cols-2 sm:grid-cols-5 gap-2.5 sm:gap-3">
               <Meta icon={BedDouble} label="الغرف" value={`${property.bedrooms || 1} غرف`} />
               <Meta icon={BedDouble} label="السراير (الأسرة)" value={`${property.beds_count || property.bedrooms || 1} سراير`} />
               <Meta icon={Bath} label="الحمامات" value={String(property.bathrooms)} />
@@ -362,23 +505,29 @@ export default function PropertyDetails() {
               } />
             </div>
 
-            <div className="mt-6">
-              <h2 className="font-bold text-lg text-slate-900">الوصف</h2>
-              <p className="mt-2 text-slate-600 leading-relaxed whitespace-pre-line">{property.description}</p>
+            {/* Description */}
+            <div className="mt-6 border-t border-slate-100 dark:border-[#1E2B4A] pt-6">
+              <h2 className="font-bold text-lg text-slate-900 dark:text-white">الوصف</h2>
+              <p className="mt-2 text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-line">{property.description}</p>
             </div>
 
+            {/* Rooms & Beds Breakdown */}
             {property.rooms && property.rooms.length > 0 && (
-              <div className="mt-6 border-t border-slate-100 pt-6">
-                <h2 className="font-bold text-lg text-slate-900 mb-3">تقسيم الغرف والأسرة المتاحة</h2>
+              <div className="mt-6 border-t border-slate-100 dark:border-[#1E2B4A] pt-6">
+                <h2 className="font-bold text-lg text-slate-900 dark:text-white mb-3">تقسيم الغرف والأسرة المتاحة</h2>
                 <div className="grid sm:grid-cols-2 gap-4">
                   {property.rooms.map((room) => {
                     const available = room.beds ? room.beds.filter((b: any) => b.status === 'available').length : 0;
                     const total = room.beds_count || (room.beds ? room.beds.length : 0);
                     return (
-                      <div key={room.id} className="rounded-2xl border border-slate-100 bg-slate-50/50 p-4">
-                        <div className="flex justify-between items-center mb-2">
-                          <span className="font-bold text-slate-800">{room.name}</span>
-                          <span className={`px-2 py-0.5 rounded-lg text-xs font-semibold ${available > 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
+                      <div key={room.id} className="rounded-2xl border border-slate-100 dark:border-[#1E2B4A] bg-slate-50/70 dark:bg-[#0A1020] p-4">
+                        <div className="flex justify-between items-center mb-3">
+                          <span className="font-bold text-slate-900 dark:text-white text-sm">{room.name}</span>
+                          <span className={`px-2.5 py-0.5 rounded-lg text-xs font-bold border ${
+                            available > 0
+                              ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+                              : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20'
+                          }`}>
                             {available > 0 ? `متاح ${available} من ${total} أسرة` : 'مكتملة بالكامل'}
                           </span>
                         </div>
@@ -386,10 +535,12 @@ export default function PropertyDetails() {
                           {room.beds?.map((bed: any) => (
                             <span
                               key={bed.id}
-                              className={`px-2 py-1 rounded-lg text-xs border font-medium ${
-                                bed.status === 'available' ? 'bg-white text-slate-700 border-slate-200' :
-                                bed.status === 'reserved' ? 'bg-amber-50 text-amber-700 border-amber-200' :
-                                'bg-slate-100 text-slate-400 border-slate-200 line-through'
+                              className={`px-2.5 py-1 rounded-xl text-xs border font-bold ${
+                                bed.status === 'available'
+                                  ? 'bg-white dark:bg-[#111A30] text-slate-800 dark:text-slate-200 border-slate-200 dark:border-[#1E2B4A] shadow-sm'
+                                  : bed.status === 'reserved'
+                                  ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30'
+                                  : 'bg-slate-100 dark:bg-[#000616] text-slate-400 dark:text-slate-500 border-slate-200 dark:border-[#1E2B4A] line-through opacity-70'
                               }`}
                             >
                               سرير {bed.bed_number} ({
@@ -406,16 +557,17 @@ export default function PropertyDetails() {
               </div>
             )}
 
+            {/* Property Amenities */}
             {!!property.property_amenities?.length && (
-              <div className="mt-6">
-                <h2 className="font-bold text-lg text-slate-900 mb-3">المميزات والخدمات</h2>
+              <div className="mt-6 border-t border-slate-100 dark:border-[#1E2B4A] pt-6">
+                <h2 className="font-bold text-lg text-slate-900 dark:text-white mb-3">المميزات والخدمات</h2>
                 <div className="flex flex-wrap gap-2">
                   {property.property_amenities.map((a) => (
                     <span
                       key={a.amenities.id}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-100 text-sm text-slate-700"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-[#0A1020] border border-slate-100 dark:border-[#1E2B4A] text-xs font-bold text-slate-800 dark:text-slate-200 shadow-sm"
                     >
-                      <Wifi className="w-3.5 h-3.5 text-brand-600" />
+                      <Wifi className="w-3.5 h-3.5 text-amber-500" />
                       {a.amenities.name}
                     </span>
                   ))}
@@ -423,18 +575,19 @@ export default function PropertyDetails() {
               </div>
             )}
 
-            <div className="mt-6">
-              <h2 className="font-bold text-lg text-slate-900 mb-3">التقييمات</h2>
+            {/* Reviews Section */}
+            <div className="mt-6 border-t border-slate-100 dark:border-[#1E2B4A] pt-6">
+              <h2 className="font-bold text-lg text-slate-900 dark:text-white mb-4">التقييمات والآراء</h2>
               {user && (
-                <form onSubmit={submitReview} className="mb-5 rounded-2xl bg-slate-50 border border-slate-100 p-4">
-                  <h3 className="text-sm font-semibold mb-2">أضف تقييمك</h3>
-                  <div className="flex gap-2 mb-3">
+                <form onSubmit={submitReview} className="mb-6 rounded-2xl bg-slate-50 dark:bg-[#0A1020] border border-slate-100 dark:border-[#1E2B4A] p-4 sm:p-5">
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-2">أضف تقييمك عن العقار</h3>
+                  <div className="flex gap-1.5 mb-3">
                     {[1, 2, 3, 4, 5].map((star) => (
                       <button
                         key={star}
                         type="button"
                         onClick={() => setRating(star)}
-                        className={`p-1 ${rating >= star ? 'text-amber-400' : 'text-slate-300'}`}
+                        className={`p-1 transition active:scale-95 ${rating >= star ? 'text-amber-400' : 'text-slate-300 dark:text-slate-600'}`}
                       >
                         <Star className="w-6 h-6 fill-current" />
                       </button>
@@ -443,35 +596,35 @@ export default function PropertyDetails() {
                   <textarea
                     value={comment}
                     onChange={(e) => setComment(e.target.value)}
-                    placeholder="اكتب انطباعك عن العقار..."
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 resize-none mb-2"
+                    placeholder="اكتب انطباعك وتجربتك في هذا السكن..."
+                    className="w-full px-3.5 py-2.5 text-sm rounded-xl bg-white dark:bg-[#111A30] border border-slate-200 dark:border-[#1E2B4A] text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500 resize-none mb-3"
                     rows={2}
                   />
-                  {reviewError && <p className="text-red-500 text-xs mb-2">{reviewError}</p>}
+                  {reviewError && <p className="text-rose-500 text-xs mb-2 font-medium">{reviewError}</p>}
                   <button
                     type="submit"
                     disabled={submittingReview}
-                    className="px-4 py-2 bg-brand-600 text-white rounded-lg text-sm font-semibold disabled:opacity-50"
+                    className="px-5 py-2.5 bg-[#FCB431] hover:bg-[#EAA01C] text-[#000616] rounded-xl text-xs font-black transition shadow disabled:opacity-50"
                   >
                     {submittingReview ? 'جاري الإرسال...' : 'إرسال التقييم'}
                   </button>
                 </form>
               )}
               {!property.reviews?.length ? (
-                <p className="text-sm text-slate-500">لا توجد تقييمات بعد.</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">لا توجد تقييمات مسجلة بعد.</p>
               ) : (
                 <div className="space-y-3">
                   {property.reviews.map((r) => (
-                    <div key={r.id} className="rounded-2xl border border-slate-100 p-4">
+                    <div key={r.id} className="rounded-2xl border border-slate-100 dark:border-[#1E2B4A] bg-slate-50/50 dark:bg-[#0A1020] p-4">
                       <div className="flex items-center justify-between">
-                        <p className="font-semibold text-slate-800">
+                        <p className="font-bold text-slate-900 dark:text-white text-sm">
                           {r.profiles?.first_name} {r.profiles?.last_name}
                         </p>
-                        <span className="inline-flex items-center gap-1 text-sm">
-                          <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" /> {r.rating}
+                        <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-md">
+                          <Star className="w-3 h-3 fill-amber-400 text-amber-400" /> {r.rating}
                         </span>
                       </div>
-                      <p className="mt-2 text-sm text-slate-600">{r.comment}</p>
+                      <p className="mt-2 text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">{r.comment}</p>
                     </div>
                   ))}
                 </div>
@@ -480,44 +633,47 @@ export default function PropertyDetails() {
           </div>
         </div>
 
-        <div className="space-y-4">
-          <div className="bg-white rounded-3xl border border-slate-100 p-6 shadow-sm sticky top-24">
-            <h2 className="font-bold text-lg text-slate-900 mb-4">خيارات السكن المتاحة</h2>
-            <div className="space-y-3">
+        {/* Sidebar Column (Listings & Broker Details) */}
+        <div className="lg:col-span-5 xl:col-span-4 space-y-5 w-full min-w-0 lg:sticky lg:top-24">
+          <div className="bg-white dark:bg-[#111A30] rounded-2xl sm:rounded-3xl border border-slate-100 dark:border-[#1E2B4A] p-4 sm:p-6 shadow-sm w-full min-w-0">
+            <h2 className="font-bold text-lg text-slate-900 dark:text-white mb-4">خيارات السكن المتاحة</h2>
+            <div className="space-y-3 w-full min-w-0">
               {activeListings.map((l) => (
                 <label
                   key={l.id}
-                  className={`block rounded-2xl border p-4 cursor-pointer transition ${
-                    selectedListing === l.id ? 'border-brand-500 bg-brand-50/50' : 'border-slate-200 hover:border-slate-300'
+                  className={`block rounded-2xl border p-3.5 sm:p-4 cursor-pointer transition w-full min-w-0 ${
+                    selectedListing === l.id
+                      ? 'border-amber-400 bg-amber-500/10 dark:border-amber-400'
+                      : 'border-slate-200 dark:border-[#1E2B4A] hover:border-slate-300'
                   }`}
                 >
-                  <div className="flex items-start gap-3">
+                  <div className="flex items-start gap-3 w-full min-w-0">
                     <input
                       type="radio"
                       name="listing"
                       checked={selectedListing === l.id}
                       onChange={() => setSelectedListing(l.id)}
-                      className="mt-1"
+                      className="mt-1 accent-amber-500 shrink-0"
                     />
-                    <div className="flex-1">
-                      <div className="flex justify-between gap-2">
-                        <span className="font-semibold text-slate-900">{listingTypeLabel(l.listing_type)}</span>
-                        <span className="font-bold text-brand-700">{formatPrice(l.price)}{l.listing_type === 'shared_bed' ? ' لكل سرير/شهرياً' : '/شهرياً'}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                        <span className="font-bold text-slate-900 dark:text-white text-sm">{listingTypeLabel(l.listing_type)}</span>
+                        <span className="font-black text-amber-500 text-sm whitespace-nowrap">{formatPrice(l.price)}{l.listing_type === 'shared_bed' ? ' / للسرير' : '/شهرياً'}</span>
                       </div>
-                      <p className="text-xs text-slate-500 mt-1">
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 truncate">
                         التأمين {formatPrice(l.deposit || 0)} · الحد الأدنى {l.minimum_months || 1} أشهر
                       </p>
                     </div>
                   </div>
                 </label>
               ))}
-              {!activeListings.length && <p className="text-sm text-slate-500">لا توجد عروض مخصصة حالياً.</p>}
+              {!activeListings.length && <p className="text-sm text-slate-500 dark:text-slate-400">لا توجد عروض مخصصة حالياً.</p>}
             </div>
 
             {isOwnerOrBroker ? (
-              <div className="mt-5 p-4 bg-amber-50 border border-amber-200 rounded-2xl text-amber-900 text-sm">
-                <p className="font-semibold text-center">تنبيه للمالك والوسيط</p>
-                <p className="mt-1 text-xs text-amber-800 text-center">
+              <div className="mt-5 p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl text-amber-800 dark:text-amber-300 text-sm">
+                <p className="font-bold text-center">تنبيه للمالك والوسيط</p>
+                <p className="mt-1 text-xs text-center opacity-90">
                   عند تأجير الشقة عن طريق المنصة، تفرض المنصة رسوم خدمة مقدارها <strong>200 جنيه مصري</strong> فقط.
                 </p>
               </div>
@@ -526,63 +682,83 @@ export default function PropertyDetails() {
                 <button
                   onClick={() => setShowBook(true)}
                   disabled={!activeListings.length}
-                  className="mt-5 w-full py-3.5 rounded-xl bg-brand-600 text-white font-semibold hover:bg-brand-700 disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="mt-5 w-full py-3.5 rounded-xl bg-[#FCB431] hover:bg-[#EAA01C] text-[#000616] font-black text-sm transition shadow-md disabled:opacity-50 flex items-center justify-center gap-2"
                 >
-                  <Calendar className="w-4 h-4" /> طلب حجز الشقة · 200 ج.م
+                  <Calendar className="w-4.5 h-4.5" /> طلب حجز الشقة · 200 ج.م
                 </button>
                 <p className="text-xs text-slate-400 text-center mt-2">رسوم الحجز 200 جنيه لضمان جدية الطلب</p>
               </>
             )}
           </div>
 
-          {broker && (
-            <div className="bg-white rounded-3xl border border-slate-100 p-6">
-              <div className="flex items-center gap-3">
-                <div className="w-14 h-14 rounded-2xl bg-brand-100 text-brand-700 flex items-center justify-center text-lg font-bold">
-                  {(broker.profiles?.first_name?.[0] || 'B').toUpperCase()}
-                </div>
-                <div>
-                  <div className="flex items-center gap-1.5">
-                    <h3 className="font-bold text-slate-900">
-                      {broker.profiles?.first_name} {broker.profiles?.last_name}
-                    </h3>
-                    {broker.verified_badge && <BadgeCheck className="w-4 h-4 text-brand-600" />}
+          {broker && (() => {
+            const isBrokerOwner = broker.profiles?.role === 'owner' || (broker.bio || '').includes('مالك') || (broker.company_name || '').includes('مالك');
+            return (
+              <div className="bg-white dark:bg-[#111A30] rounded-2xl sm:rounded-3xl border border-slate-100 dark:border-[#1E2B4A] p-4 sm:p-6 shadow-sm w-full min-w-0">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center text-lg font-black shrink-0">
+                    {(broker.profiles?.first_name?.[0] || (isBrokerOwner ? 'O' : 'B')).toUpperCase()}
                   </div>
-                  <p className="text-sm text-slate-500">{broker.company_name}</p>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <h3 className="font-bold text-slate-900 dark:text-white truncate">
+                        {broker.profiles?.first_name} {broker.profiles?.last_name}
+                      </h3>
+                      {broker.verified_badge && <BadgeCheck className="w-4 h-4 text-amber-500 shrink-0" />}
+                    </div>
+
+                    <div className="mt-1">
+                      {isBrokerOwner ? (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800">
+                          🏠 مالك عقار مباشر
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 px-2 py-0.5 rounded-md border border-blue-200 dark:border-blue-800">
+                          💼 سمسار عقاري معتمد
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
+
+                <div className="mt-4 grid grid-cols-3 gap-1.5 text-center text-xs">
+                  <div className="rounded-xl bg-slate-50 dark:bg-[#0A1020] p-2">
+                    <p className="font-black text-slate-900 dark:text-white">{broker.rating || 5}</p>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400">التقييم</p>
+                  </div>
+                  <div className="rounded-xl bg-slate-50 dark:bg-[#0A1020] p-2">
+                    <p className="font-black text-slate-900 dark:text-white">{broker.review_count || 0}</p>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400">التقييمات</p>
+                  </div>
+                  <div className="rounded-xl bg-slate-50 dark:bg-[#0A1020] p-2">
+                    <p className="font-bold text-slate-900 dark:text-white text-[11px] truncate">{broker.response_time || '1 ساعة'}</p>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400">الرد</p>
+                  </div>
+                </div>
+
+                <p className="mt-3 text-xs sm:text-sm text-slate-600 dark:text-slate-300 line-clamp-3 leading-relaxed">
+                  {broker.bio || (isBrokerOwner ? 'مالك عقارات مخصص للتأجير المباشر بدون وسيط.' : 'وسيط عقاري معتمد في المنصة.')}
+                </p>
+
+                <Link
+                  to={`/b/${broker.slug}`}
+                  className="mt-4 inline-flex items-center gap-1 text-xs font-black text-amber-500 hover:text-amber-600 transition"
+                >
+                  <span>{isBrokerOwner ? 'عرض ملف المالك المباشر' : 'عرض ملف الوسيط العقاري'} ←</span>
+                </Link>
               </div>
-              <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-                <div className="rounded-xl bg-slate-50 p-2">
-                  <p className="font-bold text-slate-900">{broker.rating}</p>
-                  <p className="text-[10px] text-slate-500">التقييم</p>
-                </div>
-                <div className="rounded-xl bg-slate-50 p-2">
-                  <p className="font-bold text-slate-900">{broker.review_count}</p>
-                  <p className="text-[10px] text-slate-500">التقييمات</p>
-                </div>
-                <div className="rounded-xl bg-slate-50 p-2">
-                  <p className="font-bold text-slate-900 text-xs">{broker.response_time}</p>
-                  <p className="text-[10px] text-slate-500">سرعة الرد</p>
-                </div>
-              </div>
-              <p className="mt-3 text-sm text-slate-600 line-clamp-3">{broker.bio}</p>
-              <Link
-                to={`/b/${broker.slug}`}
-                className="mt-4 inline-flex text-sm font-semibold text-brand-600 hover:text-brand-700"
-              >
-                عرض ملف الوسيط ←
-              </Link>
-            </div>
-          )}
+            );
+          })()}
         </div>
       </div>
 
+      {/* Visit Booking Modal */}
       {showBook && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setShowBook(false)} />
-          <div className="relative bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-6 shadow-xl max-h-[90vh] overflow-y-auto">
-            <h3 className="text-xl font-bold text-slate-900">طلب حجز المعاينة</h3>
-            <p className="text-sm text-slate-500 mt-1">اختر التاريخ والوقت المناسبين للمعاينة.</p>
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowBook(false)} />
+          <div className="relative bg-white dark:bg-[#111A30] w-full max-w-md rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl border border-slate-100 dark:border-[#1E2B4A] max-h-[90vh] overflow-y-auto z-10 text-slate-900 dark:text-white">
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white">طلب حجز المعاينة</h3>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">اختر التاريخ والوقت المناسبين للمعاينة.</p>
 
             <div className="mt-5 space-y-3">
               <div>
@@ -784,10 +960,10 @@ function Meta({
   value: string;
 }) {
   return (
-    <div className="rounded-2xl bg-slate-50 border border-slate-100 p-3">
-      <Icon className="w-4 h-4 text-brand-600 mb-1" />
-      <p className="text-xs text-slate-500">{label}</p>
-      <p className="font-semibold text-slate-900 capitalize">{value}</p>
+    <div className="rounded-2xl bg-slate-50 dark:bg-[#0A1020] border border-slate-100 dark:border-[#1E2B4A] p-3 sm:p-3.5 transition-all">
+      <Icon className="w-4 h-4 text-amber-500 mb-1.5" />
+      <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">{label}</p>
+      <p className="font-black text-slate-900 dark:text-white capitalize text-xs sm:text-sm mt-0.5">{value}</p>
     </div>
   );
 }
