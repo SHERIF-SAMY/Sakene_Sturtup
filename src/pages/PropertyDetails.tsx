@@ -55,7 +55,7 @@ type Property = {
     verified_badge: boolean;
     slug: string;
     response_time?: string;
-    profiles?: { first_name: string; last_name: string; avatar?: string; phone?: string };
+    profiles?: { first_name: string; last_name: string; avatar?: string; phone?: string; role?: string };
   } | null;
 };
 
