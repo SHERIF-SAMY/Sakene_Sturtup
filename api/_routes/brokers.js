@@ -50,7 +50,7 @@ export default async function handler(req, res) {
 
         const { data: profileData } = await supabase
           .from('profiles')
-          .select('id, first_name, last_name, email, phone, avatar, is_verified')
+          .select('id, first_name, last_name, email, phone, avatar, is_verified, role')
           .eq('id', broker.user_id)
           .maybeSingle();
 

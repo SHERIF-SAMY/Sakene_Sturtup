@@ -45,7 +45,7 @@ export default async function handler(req, res) {
         const { data: broker } = data.broker_id ? await supabase.from('broker_profiles').select('id, user_id, company_name, bio, rating, review_count, verified_badge, slug, response_time').eq('id', data.broker_id).maybeSingle() : { data: null };
         let brokerProfile = null;
         if (broker) {
-          const { data: bp } = broker.user_id ? await supabase.from('profiles').select('first_name, last_name, avatar, phone').eq('id', broker.user_id).maybeSingle() : { data: null };
+          const { data: bp } = broker.user_id ? await supabase.from('profiles').select('first_name, last_name, avatar, phone, role').eq('id', broker.user_id).maybeSingle() : { data: null };
           brokerProfile = { ...broker, profiles: bp || null };
         }
 
