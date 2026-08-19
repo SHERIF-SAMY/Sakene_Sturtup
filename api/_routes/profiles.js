@@ -53,6 +53,12 @@ export default async function handler(req, res) {
     if (req.method === 'POST') {
       const { id, email, first_name, last_name, phone, role, avatar, is_broker_account } = req.body;
       if (!id || !email) return res.status(400).json({ error: 'id and email required' });
+
+      if (phone) {
+        const { data: pMatch } = await supabase.from('profiles').select('id').eq('phone', phone.trim()).neq('id', id).maybeSingle();
+        if (pMatch) return res.status(409).json({ error: 'رقم الهاتف مستخدم بالفعل بحساب آخر.' });
+      }
+
       const { data: existing } = await supabase.from('profiles').select('*').eq('id', id).maybeSingle();
       
       const targetRole = role || (email.includes('admin') ? 'admin' : 'tenant');
@@ -100,6 +106,12 @@ export default async function handler(req, res) {
     if (req.method === 'PUT') {
       const { id, ...updates } = req.body;
       if (!id) return res.status(400).json({ error: 'id required' });
+
+      if (updates.phone) {
+        const { data: pMatch } = await supabase.from('profiles').select('id').eq('phone', updates.phone.trim()).neq('id', id).maybeSingle();
+        if (pMatch) return res.status(409).json({ error: 'رقم الهاتف مستخدم بالفعل بحساب آخر.' });
+      }
+
       const allowed = ['first_name', 'last_name', 'phone', 'avatar', 'role', 'is_verified', 'status', 'is_broker_account'];
       const payload = {};
       for (const k of allowed) if (updates[k] !== undefined) payload[k] = updates[k];

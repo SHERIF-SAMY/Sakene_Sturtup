@@ -323,29 +323,55 @@ export default function Landing() {
             >
               <div className="relative mx-auto max-w-md">
                 {/* Visual Frame */}
-                <div className="relative rounded-3xl overflow-hidden border-2 border-[#1E2B4A] shadow-2xl bg-[#111A30] group">
-                  <img
-                    src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=1000&q=80"
-                    alt="Agarly Student Apartment"
-                    className="w-full h-80 sm:h-96 object-cover group-hover:scale-105 transition-transform duration-700"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#000616] via-transparent to-transparent" />
-                  
-                  {/* Floating badge inside hero graphic */}
-                  <div className="absolute bottom-4 inset-x-4 p-4 rounded-2xl bg-[#000616]/90 backdrop-blur-md border border-[#1E2B4A] flex items-center justify-between">
-                    <div>
-                      <span className="px-2 py-0.5 rounded-md bg-[#FCB431] text-[#000616] text-[10px] font-black">
-                        موثق من أجرلي
-                      </span>
-                      <h4 className="text-sm font-bold text-white mt-1">شقة طلابية مفروشة فاخرة</h4>
-                      <p className="text-xs text-slate-400">على بُعد 5 دقائق من الجامعة</p>
-                    </div>
-                    <div className="text-end">
-                      <span className="text-xs text-slate-400 block">تبدأ من</span>
-                      <span className="text-base font-black text-[#FCB431]">3,500 ج.م</span>
-                    </div>
-                  </div>
-                </div>
+                {(() => {
+                  const heroProperty = featured[0];
+                  const heroImg = heroProperty
+                    ? ((heroProperty.property_images || []).find(i => i.is_cover) || (heroProperty.property_images || [])[0])?.image_url || 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=1000&q=80'
+                    : 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=1000&q=80';
+                  const heroTitle = heroProperty?.title || 'شقة طلابية مفروشة فاخرة';
+                  const heroLocation = heroProperty
+                    ? (heroProperty.district || heroProperty.cities?.name || 'على بُعد 5 دقائق من الجامعة')
+                    : 'على بُعد 5 دقائق من الجامعة';
+                  const heroPrice = heroProperty
+                    ? (() => {
+                        const active = (heroProperty.listings || []).filter(l => l.status === 'active');
+                        return active.length ? Math.min(...active.map(l => l.price)) : null;
+                      })()
+                    : null;
+                  const isVerified = heroProperty?.broker_profiles?.verified_badge;
+
+                  return (
+                    <Link to={heroProperty ? `/property/${heroProperty.id}` : '/search'} className="block">
+                      <div className="relative rounded-3xl overflow-hidden border-2 border-[#1E2B4A] shadow-2xl bg-[#111A30] group cursor-pointer">
+                        <img
+                          src={heroImg}
+                          alt={heroTitle}
+                          className="w-full h-80 sm:h-96 object-cover group-hover:scale-105 transition-transform duration-700"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#000616] via-transparent to-transparent" />
+                        
+                        {/* Floating badge inside hero graphic */}
+                        <div className="absolute bottom-4 inset-x-4 p-4 rounded-2xl bg-[#000616]/90 backdrop-blur-md border border-[#1E2B4A] flex items-center justify-between">
+                          <div>
+                            {(isVerified || heroProperty?.is_featured) && (
+                              <span className="px-2 py-0.5 rounded-md bg-[#FCB431] text-[#000616] text-[10px] font-black">
+                                موثق من أجرلي
+                              </span>
+                            )}
+                            <h4 className="text-sm font-bold text-white mt-1 line-clamp-1">{heroTitle}</h4>
+                            <p className="text-xs text-slate-400">{heroLocation}</p>
+                          </div>
+                          <div className="text-end">
+                            <span className="text-xs text-slate-400 block">تبدأ من</span>
+                            <span className="text-base font-black text-[#FCB431]">
+                              {heroPrice ? `${heroPrice.toLocaleString('ar-EG')} ج.م` : '---'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+                  );
+                })()}
 
                 {/* Floating Micro Badge */}
                 <div className="absolute -top-4 -right-4 bg-[#FCB431] text-[#000616] p-3 rounded-2xl shadow-xl font-black text-xs flex items-center gap-2 animate-bounce">

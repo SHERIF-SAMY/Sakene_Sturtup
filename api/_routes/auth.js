@@ -57,6 +57,13 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'id and email required' });
       }
 
+      if (phone) {
+        const { data: pMatch } = await supabase.from('profiles').select('id').eq('phone', phone.trim()).neq('id', id).maybeSingle();
+        if (pMatch) {
+          return res.status(409).json({ error: 'رقم الهاتف مستخدم بالفعل بحساب آخر.' });
+        }
+      }
+
       const userRole = ['tenant', 'broker', 'owner', 'admin', 'super_admin'].includes(role) ? role : 'tenant';
 
       // Use upsert to handle the race condition with AuthContext and ensure the correct role is saved

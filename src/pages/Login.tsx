@@ -108,6 +108,13 @@ export default function Login() {
         const effectiveRole = accountType === 'owner' ? 'owner' : accountType === 'broker' ? 'broker' : 'tenant';
         const isBrokerAccount = accountType === 'broker' || accountType === 'owner';
 
+        // Check if email or phone is already in use
+        const checkRes = await fetch(`/api/profiles?check=unique&email=${encodeURIComponent(email.trim().toLowerCase())}&phone=${encodeURIComponent(phone.trim())}`);
+        if (!checkRes.ok) {
+          const checkData = await checkRes.json().catch(() => ({}));
+          throw new Error(checkData.error || 'فشل التحقق من صحة البيانات.');
+        }
+
         const { data, error: err } = await supabase.auth.signUp({
           email: email.trim(),
           password,
@@ -202,7 +209,7 @@ export default function Login() {
               </div>
             )}
             {mode === 'signup' && (
-              <Field icon={Phone} placeholder="رقم الهاتف (ضروري للمعاينة)" value={phone} onChange={setPhone} type="tel" required />
+              <Field icon={Phone} placeholder="رقم الهاتف (ضروري للمعاينة)" value={phone} onChange={setPhone} type="tel" required maxLength={11} />
             )}
             <Field
               icon={mode === 'login' ? User : Mail}
@@ -263,7 +270,7 @@ export default function Login() {
 }
 
 function Field({
-  icon: Icon, placeholder, value, onChange, type = 'text', required,
+  icon: Icon, placeholder, value, onChange, type = 'text', required, maxLength,
 }: {
   icon: React.ComponentType<{ className?: string }>;
   placeholder: string;
@@ -271,16 +278,31 @@ function Field({
   onChange: (v: string) => void;
   type?: string;
   required?: boolean;
+  maxLength?: number;
 }) {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let val = e.target.value;
+    // For tel type, allow only digits
+    if (type === 'tel') {
+      val = val.replace(/[^0-9]/g, '');
+    }
+    // Enforce maxLength
+    if (maxLength && val.length > maxLength) {
+      return;
+    }
+    onChange(val);
+  };
+
   return (
     <div className="relative">
       <Icon className="w-4 h-4 absolute start-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
       <input
         type={type}
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={handleChange}
         placeholder={placeholder}
         required={required}
+        maxLength={maxLength}
         className="w-full ps-10 pe-4 py-3 rounded-2xl border border-slate-200 dark:border-[#1E2B4A] bg-slate-50 dark:bg-[#0A1020] text-slate-900 dark:text-white text-xs font-bold focus:bg-white dark:focus:bg-[#0A1020] focus:ring-2 focus:ring-[#FCB431] outline-none transition"
       />
     </div>

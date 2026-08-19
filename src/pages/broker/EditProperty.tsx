@@ -60,7 +60,12 @@ export default function EditProperty() {
   const totalBeds = roomsConfig.reduce((sum, r) => sum + Number(r.beds_count || 1), 0);
 
   const handleBedroomsChange = (val: string) => {
-    const n = Math.max(1, parseInt(val) || 1);
+    const cleaned = val.replace(/[^0-9]/g, '');
+    if (cleaned === '') {
+      set('bedrooms', '');
+      return;
+    }
+    const n = Math.max(1, parseInt(cleaned) || 1);
     set('bedrooms', String(n));
     setRoomsConfig((prev) => {
       const next = [...prev];
@@ -291,7 +296,8 @@ export default function EditProperty() {
         <div>
           <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">{t('addProperty.bedrooms')}</label>
           <input
-            type="number"
+            type="text"
+            inputMode="numeric"
             value={form.bedrooms}
             required
             onChange={(e) => handleBedroomsChange(e.target.value)}
@@ -301,7 +307,8 @@ export default function EditProperty() {
         <div>
           <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">إجمالي عدد الأسرة (السراير)</label>
           <input
-            type="number"
+            type="text"
+            inputMode="numeric"
             value={totalBeds}
             disabled
             className="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 cursor-not-allowed"
@@ -320,14 +327,15 @@ export default function EditProperty() {
                 {room.name}:
               </label>
               <input
-                type="number"
-                min="1"
+                type="text"
+                inputMode="numeric"
                 value={room.beds_count}
                 onChange={(e) => {
-                  const val = Math.max(1, parseInt(e.target.value) || 1);
+                  const cleaned = e.target.value.replace(/[^0-9]/g, '');
+                  const val = cleaned === '' ? '' : Math.max(1, parseInt(cleaned) || 1);
                   setRoomsConfig((prev) => {
                     const next = [...prev];
-                    next[idx] = { ...next[idx], beds_count: val };
+                    next[idx] = { ...next[idx], beds_count: val as any };
                     return next;
                   });
                 }}
@@ -485,14 +493,23 @@ function Field({
   type?: string;
   required?: boolean;
 }) {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let val = e.target.value;
+    if (type === 'number') {
+      val = val.replace(/[^0-9]/g, '');
+    }
+    onChange(val);
+  };
+
   return (
     <div>
       <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">{label}</label>
       <input
-        type={type}
+        type={type === 'number' ? 'text' : type}
+        inputMode={type === 'number' ? 'numeric' : undefined}
         value={value}
         required={required}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={handleChange}
         className="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-white"
       />
     </div>

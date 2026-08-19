@@ -95,20 +95,27 @@ export default function AdminAnalytics() {
   }, [stats, selectedMonth]);
 
   // Revenue for selected period (400 EGP per completed operation)
-  const periodRevenue = filteredCompletedVisits.length * 400;
+  // Use server-computed adminStats when 'all' is selected (they respect the reset marker)
+  const periodRevenue = selectedMonth === 'all'
+    ? (stats?.totalRevenue || 0)
+    : filteredCompletedVisits.length * 400;
 
   // Per-admin breakdown for selected month
   const adminMonthlyStats = useMemo(() => {
     const admins = stats?.adminStats || [];
     return admins.map((adm) => {
+      if (selectedMonth === 'all') {
+        // Use server-computed counts which respect the reset marker
+        return {
+          ...adm,
+          periodCompletedCount: adm.completedCount,
+          periodEarnings: adm.totalEarnings,
+        };
+      }
+      // For specific months: filter by month from filtered visits
       const admVisits = filteredCompletedVisits.filter((v) => (v as any).processed_by_admin_id === adm.id);
       const admEarnings = filteredEarnings.filter((e) => e.admin_id === adm.id);
       let count = Math.max(admVisits.length, admEarnings.length);
-
-      // If count is 0 and only 1 admin/super_admin exists, attribute the completed visits to them
-      if (count === 0 && (adm.role === 'super_admin' || admins.length === 1)) {
-        count = filteredCompletedVisits.length;
-      }
 
       return {
         ...adm,
@@ -116,7 +123,7 @@ export default function AdminAnalytics() {
         periodEarnings: count * 400,
       };
     });
-  }, [stats, filteredCompletedVisits, filteredEarnings]);
+  }, [stats, filteredCompletedVisits, filteredEarnings, selectedMonth]);
 
   const handleResetEarnings = async (adminId?: string) => {
     if (!confirm(adminId ? 'هل أنت تأكد من تصفير أرباح هذا الأدمن؟' : 'هل أنت تأكد من تصفير كافة أرباح المسؤولين؟')) {
