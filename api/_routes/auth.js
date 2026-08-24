@@ -76,6 +76,7 @@ export default async function handler(req, res) {
           last_name: last_name || '',
           phone: phone || null,
           role: userRole,
+          tenant_profile: req.body.tenant_profile || 'individual',
           is_broker_account: !!is_broker_account,
           is_verified: true,
           status: 'active',

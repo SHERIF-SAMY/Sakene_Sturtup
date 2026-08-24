@@ -70,6 +70,8 @@ export default function AddProperty() {
   const [dbCities, setDbCities] = useState<Opt[]>([]);
 
   const [form, setForm] = useState({
+    deal_type: 'rental',
+    property_type: 'apartment',
     title: '',
     description: '',
     city_key: '',       // key from KAFR_CITIES
@@ -249,6 +251,8 @@ export default function AddProperty() {
 
     try {
       const prop = await apiSend<{ id: number }>('/api/properties', 'POST', {
+        deal_type: form.deal_type,
+        property_type: form.property_type,
         title: form.title,
         description: form.description,
         city_id: cityId,
@@ -304,6 +308,41 @@ export default function AddProperty() {
   return (
     <form onSubmit={submit} className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 p-6 space-y-5 max-w-3xl">
       <h2 className="text-xl font-bold text-slate-900 dark:text-white">{t('addProperty.title')}</h2>
+
+      {/* Deal Type & Property Type Selectors */}
+      <div className="grid sm:grid-cols-2 gap-4 bg-slate-50 dark:bg-slate-700/40 p-4 rounded-2xl border border-slate-100 dark:border-slate-700">
+        <div>
+          <label className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase block mb-1">
+            نوع الصفقة
+          </label>
+          <select
+            value={form.deal_type}
+            onChange={(e) => set('deal_type', e.target.value)}
+            className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 dark:bg-slate-800 dark:text-white font-bold text-sm"
+          >
+            <option value="rental">إيجار (عرض للإيجار)</option>
+            <option value="for_sale">تمليك (عرض للبيع)</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase block mb-1">
+            نوع العقار
+          </label>
+          <select
+            value={form.property_type}
+            onChange={(e) => set('property_type', e.target.value)}
+            className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 dark:bg-slate-800 dark:text-white font-bold text-sm"
+          >
+            <option value="apartment">شقة سكنية</option>
+            <option value="shop">محل تجاري</option>
+            <option value="office">مكتب إداري</option>
+            <option value="land">أرض</option>
+            <option value="villa">فيلا</option>
+            <option value="other">عقار آخر</option>
+          </select>
+        </div>
+      </div>
 
       <Field label={t('addProperty.property_title')} value={form.title} onChange={(v) => set('title', v)} required />
 

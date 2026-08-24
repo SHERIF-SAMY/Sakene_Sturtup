@@ -17,6 +17,7 @@ export default function Login() {
   const [accountType, setAccountType] = useState<'tenant' | 'owner' | 'broker'>(
     params.get('role') === 'owner' ? 'owner' : params.get('role') === 'broker' ? 'broker' : 'tenant'
   );
+  const [tenantSubProfile, setTenantSubProfile] = useState<'student' | 'family'>('student');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [firstName, setFirstName] = useState('');
@@ -115,6 +116,8 @@ export default function Login() {
           throw new Error(checkData.error || 'فشل التحقق من صحة البيانات.');
         }
 
+        const selectedTenantProf = accountType === 'tenant' ? tenantSubProfile : 'individual';
+
         const { data, error: err } = await supabase.auth.signUp({
           email: email.trim(),
           password,
@@ -124,6 +127,7 @@ export default function Login() {
               last_name: lastName.trim(),
               phone: phone.trim(),
               role: effectiveRole,
+              tenant_profile: selectedTenantProf,
               is_broker_account: isBrokerAccount,
             },
           },
@@ -146,6 +150,7 @@ export default function Login() {
           last_name: lastName.trim(),
           phone: phone.trim(),
           role: effectiveRole,
+          tenant_profile: selectedTenantProf,
           is_broker_account: isBrokerAccount,
         });
 
@@ -179,26 +184,62 @@ export default function Login() {
 
         <div className="bg-white dark:bg-[#111A30] rounded-3xl border border-slate-200/80 dark:border-[#1E2B4A] shadow-xl p-6 sm:p-8">
           {mode === 'signup' && (
-            <div className="grid grid-cols-3 gap-1 p-1 bg-slate-100 dark:bg-[#0A1020] rounded-2xl mb-6 border border-slate-200/60 dark:border-[#1E2B4A]">
-              {[
-                { type: 'tenant', label: 'طالب / مستأجر' },
-                { type: 'owner', label: 'مالك شقة' },
-                { type: 'broker', label: 'وسيط / سمسار' },
-              ].map(({ type, label }) => (
-                <button
-                  key={type}
-                  type="button"
-                  onClick={() => setAccountType(type as any)}
-                  className={`py-2 rounded-xl text-xs font-black transition ${
-                    accountType === type
-                      ? 'bg-[#FCB431] text-[#000616] shadow-sm'
-                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-3 gap-1 p-1 bg-slate-100 dark:bg-[#0A1020] rounded-2xl mb-4 border border-slate-200/60 dark:border-[#1E2B4A]">
+                {[
+                  { type: 'tenant', label: 'مستأجر / باحث' },
+                  { type: 'owner', label: 'مالك عقار' },
+                  { type: 'broker', label: 'وسيط / سمسار' },
+                ].map(({ type, label }) => (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() => setAccountType(type as any)}
+                    className={`py-2 rounded-xl text-xs font-black transition ${
+                      accountType === type
+                        ? 'bg-[#FCB431] text-[#000616] shadow-sm'
+                        : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              {accountType === 'tenant' && (
+                <div className="mb-5 space-y-1.5">
+                  <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400 block">
+                    اختر الفئة المستهدفة لسكنك:
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setTenantSubProfile('student')}
+                      className={`p-3 rounded-2xl border text-right transition flex flex-col justify-between ${
+                        tenantSubProfile === 'student'
+                          ? 'border-[#FCB431] bg-[#FCB431]/10 text-slate-900 dark:text-white ring-1 ring-[#FCB431]'
+                          : 'border-slate-200 dark:border-[#1E2B4A] bg-slate-50 dark:bg-[#0A1020] text-slate-600 dark:text-slate-400'
+                      }`}
+                    >
+                      <span className="text-xs font-black">طالب / عامل</span>
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">شقة كاملة / غرفة / سرير مشترك</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTenantSubProfile('family')}
+                      className={`p-3 rounded-2xl border text-right transition flex flex-col justify-between ${
+                        tenantSubProfile === 'family'
+                          ? 'border-[#FCB431] bg-[#FCB431]/10 text-slate-900 dark:text-white ring-1 ring-[#FCB431]'
+                          : 'border-slate-200 dark:border-[#1E2B4A] bg-slate-50 dark:bg-[#0A1020] text-slate-600 dark:text-slate-400'
+                      }`}
+                    >
+                      <span className="text-xs font-black">أهالي / عائلات</span>
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">شقة كاملة / تمليك / فيلا</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">

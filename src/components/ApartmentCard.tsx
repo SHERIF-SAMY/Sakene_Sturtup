@@ -7,6 +7,8 @@ export type PropertyCardData = {
   id: number;
   title: string;
   district?: string;
+  deal_type?: string;
+  property_type?: string;
   bedrooms?: number;
   beds_count?: number;
   tenant_type?: string;
@@ -90,9 +92,29 @@ export default function ApartmentCard({
                 <Sparkles className="w-3.5 h-3.5" /> مميز
               </span>
             )}
-            <span className="px-2.5 py-1 rounded-xl bg-[#2B3143]/90 backdrop-blur-md text-white text-[11px] font-bold shadow-sm">
-              {listingTypeLabel(type)}
+            <span className={`px-2.5 py-1 rounded-xl text-white text-[11px] font-bold shadow-sm ${
+              property.deal_type === 'for_sale' ? 'bg-emerald-600' : 'bg-[#2B3143]/90 backdrop-blur-md'
+            }`}>
+              {property.deal_type === 'for_sale' ? 'للبيع' : 'للإيجار'}
             </span>
+            {property.property_type && property.property_type !== 'apartment' && (
+              <span className="px-2.5 py-1 rounded-xl bg-blue-600/90 text-white text-[11px] font-bold shadow-sm">
+                {property.property_type === 'shop'
+                  ? 'محل تجاري'
+                  : property.property_type === 'office'
+                  ? 'مكتب'
+                  : property.property_type === 'land'
+                  ? 'أرض'
+                  : property.property_type === 'villa'
+                  ? 'فيلا'
+                  : 'عقار'}
+              </span>
+            )}
+            {property.deal_type !== 'for_sale' && (
+              <span className="px-2.5 py-1 rounded-xl bg-[#2B3143]/90 backdrop-blur-md text-white text-[11px] font-bold shadow-sm">
+                {listingTypeLabel(type)}
+              </span>
+            )}
           </div>
 
           {/* Favorite heart */}
@@ -175,7 +197,7 @@ export default function ApartmentCard({
                 {price != null ? formatPrice(price) : '—'}
               </span>
               <span className="text-[10px] font-bold text-slate-400">
-                {type === 'shared_bed' ? '/ للسرير' : '/ شهرياً'}
+                {property.deal_type === 'for_sale' ? '/ السعر الإجمالي' : type === 'shared_bed' ? '/ للسرير' : '/ شهرياً'}
               </span>
             </div>
           </div>
@@ -184,7 +206,7 @@ export default function ApartmentCard({
             to={`/properties/${property.id}`}
             className="px-4 py-2 rounded-xl bg-[#FCB431] hover:bg-[#EAA01C] text-[#000616] text-xs font-black transition shadow-sm hover:shadow active:scale-95 flex items-center gap-1 shrink-0"
           >
-            <span>احجز الآن</span>
+            <span>{property.deal_type === 'for_sale' ? 'استفسر الآن' : 'احجز الآن'}</span>
           </Link>
         </div>
       </div>

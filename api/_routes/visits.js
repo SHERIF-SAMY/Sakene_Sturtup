@@ -275,7 +275,7 @@ export default async function handler(req, res) {
       const adminNotifs = (admins || []).map((admin) => ({
         user_id: admin.id,
         title: '🔔 طلب حجز جديد',
-        body: `${tenantName} طلب حجز ${propNum} "${propTitle}" بتاريخ ${visit_date} الساعة ${visit_time}. رسوم الحجز: 200 ج.`,
+        body: `${tenantName} طلب حجز ${propNum} "${propTitle}" بتاريخ ${visit_date} الساعة ${visit_time}.`,
         type: 'new_visit',
         is_read: false,
       }));
@@ -285,7 +285,7 @@ export default async function handler(req, res) {
       await supabase.from('notifications').insert({
         user_id: student_id,
         title: '✅ تم استلام طلب الحجز',
-        body: `تم استلام طلب حجزك لـ ${propNum} "${propTitle}" بتاريخ ${visit_date} الفترة ${visit_time}. لإتمام الحجز، يرجى دفع 200 ج رسوم حجز عبر فودافون كاش أو إنستا باي على الرقم: 01016024660 وإرسال صورة الإيصال.`,
+        body: `تم استلام طلب حجزك لـ ${propNum} "${propTitle}" بتاريخ ${visit_date} الفترة ${visit_time}. سيتم التواصل معك قريباً لتأكيد موعد المعاينة.`,
         type: 'new_visit',
         is_read: false,
       });
@@ -299,7 +299,7 @@ export default async function handler(req, res) {
           title: '🏠 طلب حجز لشقتك',
           body: isBrokerAcc
             ? `يوجد طلب حجز جديد لشقتك ${propNum} "${propTitle}" بتاريخ ${visit_date}. في حالة تم الاتفاق الكامل مع المستأجر، هناك رسوم خدمة بقيمة 400 ج تُدفع عبر فودافون كاش أو إنستا باي على الرقم: 01016024660.`
-            : `يوجد طلب حجز جديد لشقتك ${propNum} "${propTitle}" بتاريخ ${visit_date}. في حالة تأجير شقتك، هناك رسوم خدمة بقيمة 200 ج تُدفع عبر فودافون كاش أو إنستا باي على الرقم: 01016024660.`,
+            : `يوجد طلب حجز جديد لشقتك ${propNum} "${propTitle}" بتاريخ ${visit_date}. سيتم التواصل معك قريباً لتنسيق موعد المعاينة.`,
           type: 'new_visit',
           is_read: false,
         });

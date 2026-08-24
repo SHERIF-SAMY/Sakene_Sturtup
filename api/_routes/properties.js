@@ -138,6 +138,8 @@ export default async function handler(req, res) {
         .insert({
           title,
           description: description || '',
+          deal_type: req.body.deal_type || 'rental',
+          property_type: req.body.property_type || 'apartment',
           city_id: city_id || null,
           district: district || '',
           address: address || '',
@@ -234,7 +236,8 @@ export default async function handler(req, res) {
       const allowed = [
         'title', 'description', 'city_id', 'district', 'address', 'latitude', 'longitude',
         'floor', 'area', 'bedrooms', 'bathrooms', 'furnished', 'gender_allowed',
-        'university_id', 'status', 'rejection_reason', 'for_students', 'beds_count', 'tenant_type'
+        'university_id', 'status', 'rejection_reason', 'for_students', 'beds_count', 'tenant_type',
+        'deal_type', 'property_type'
       ];
       const payload = {};
       for (const k of allowed) if (rest[k] !== undefined) payload[k] = rest[k];

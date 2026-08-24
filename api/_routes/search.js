@@ -11,6 +11,7 @@ export default async function handler(req, res) {
 
     const {
       q, university_id, city_id, district, gender, listing_type,
+      deal_type, property_type,
       min_price, max_price, furnished, for_students, sort = 'newest', districts: fetchDistricts,
     } = req.query;
 
@@ -39,6 +40,8 @@ export default async function handler(req, res) {
       `)
       .eq('status', 'active');
 
+    if (deal_type) query = query.eq('deal_type', deal_type);
+    if (property_type) query = query.eq('property_type', property_type);
     if (university_id) query = query.eq('university_id', university_id);
     if (city_id) query = query.eq('city_id', city_id);
     if (district) query = query.eq('district', district);

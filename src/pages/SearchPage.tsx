@@ -14,7 +14,7 @@ type City = { id: number; name: string };
 export default function SearchPage() {
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { t } = useTranslation();
   const [results, setResults] = useState<PropertyCardData[]>([]);
   const [unis, setUnis] = useState<Uni[]>([]);
@@ -27,6 +27,8 @@ export default function SearchPage() {
   const filters = useMemo(
     () => ({
       q: params.get('q') || '',
+      deal_type: params.get('deal_type') || '',
+      property_type: params.get('property_type') || '',
       university_id: params.get('university_id') || '',
       city_id: params.get('city_id') || '',
       district: params.get('district') || '',
@@ -72,10 +74,16 @@ export default function SearchPage() {
       if (v) qs.set(k, v);
     });
     apiGet<PropertyCardData[]>(`/api/search?${qs.toString()}`)
-      .then(setResults)
+      .then((data) => {
+        if (profile?.tenant_profile === 'family') {
+          setResults(data.filter((p) => !(p.listings || []).some((l) => l.listing_type === 'shared_bed')));
+        } else {
+          setResults(data);
+        }
+      })
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [filters]);
+  }, [filters, profile?.tenant_profile]);
 
   const toggleFav = async (propertyId: number) => {
     if (!user) {
@@ -119,6 +127,40 @@ export default function SearchPage() {
 
       <div>
         <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block mb-1">
+          نوع الصفقة
+        </label>
+        <select
+          value={filters.deal_type}
+          onChange={(e) => update('deal_type', e.target.value)}
+          className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-[#1E2B4A] bg-slate-50 dark:bg-[#0A1020] text-slate-900 dark:text-white text-xs font-bold outline-none focus:ring-2 focus:ring-[#FCB431] transition"
+        >
+          <option value="">الكل (إيجار + تمليك)</option>
+          <option value="rental">للإيجار</option>
+          <option value="for_sale">تمليك (للبيع)</option>
+        </select>
+      </div>
+
+      <div>
+        <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block mb-1">
+          نوع العقار
+        </label>
+        <select
+          value={filters.property_type}
+          onChange={(e) => update('property_type', e.target.value)}
+          className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-[#1E2B4A] bg-slate-50 dark:bg-[#0A1020] text-slate-900 dark:text-white text-xs font-bold outline-none focus:ring-2 focus:ring-[#FCB431] transition"
+        >
+          <option value="">كافة أنواع العقارات</option>
+          <option value="apartment">شقة</option>
+          <option value="shop">محل تجاري</option>
+          <option value="office">مكتب إداري</option>
+          <option value="land">أرض</option>
+          <option value="villa">فيلا</option>
+          <option value="other">عقار آخر</option>
+        </select>
+      </div>
+
+      <div>
+        <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block mb-1">
           الجامعة القريبة
         </label>
         <select
@@ -135,21 +177,23 @@ export default function SearchPage() {
         </select>
       </div>
 
-      <div>
-        <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block mb-1">
-          {t('search.listing_type')}
-        </label>
-        <select
-          value={filters.listing_type}
-          onChange={(e) => update('listing_type', e.target.value)}
-          className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-[#1E2B4A] bg-slate-50 dark:bg-[#0A1020] text-slate-900 dark:text-white text-xs font-bold outline-none focus:ring-2 focus:ring-[#FCB431] transition"
-        >
-          <option value="">{t('search.any')}</option>
-          <option value="entire_apartment">{t('search.entire_apartment')}</option>
-          <option value="private_room">{t('search.private_room')}</option>
-          <option value="shared_bed">{t('search.shared_bed')}</option>
-        </select>
-      </div>
+      {filters.deal_type !== 'for_sale' && (
+        <div>
+          <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block mb-1">
+            {t('search.listing_type')}
+          </label>
+          <select
+            value={filters.listing_type}
+            onChange={(e) => update('listing_type', e.target.value)}
+            className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-[#1E2B4A] bg-slate-50 dark:bg-[#0A1020] text-slate-900 dark:text-white text-xs font-bold outline-none focus:ring-2 focus:ring-[#FCB431] transition"
+          >
+            <option value="">{t('search.any')}</option>
+            <option value="entire_apartment">{t('search.entire_apartment')}</option>
+            <option value="private_room">{t('search.private_room')}</option>
+            <option value="shared_bed">{t('search.shared_bed')}</option>
+          </select>
+        </div>
+      )}
 
       <div>
         <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block mb-1">
@@ -196,7 +240,7 @@ export default function SearchPage() {
             onChange={(e) => update('furnished', e.target.checked ? 'true' : '')}
             className="rounded border-slate-300 text-[#FCB431] focus:ring-[#FCB431] w-4 h-4"
           />
-          <span>شقق مفروشة فقط</span>
+          <span>مفروشة بالكامل فقط</span>
         </label>
         <label className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer select-none">
           <input
@@ -231,7 +275,7 @@ export default function SearchPage() {
               </span>
             </div>
             <h1 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white">
-              استكشف الشقق والغرف الطلابية
+              استكشف كافة العقارات المتاحة
             </h1>
             <p className="text-slate-500 dark:text-slate-400 text-xs font-bold mt-1">
               {loading ? 'جاري البحث عن أنسب الخيارات...' : `تم العثور على ${results.length} خيار متاح`}
@@ -263,6 +307,10 @@ export default function SearchPage() {
         {/* Rapid Quick Filter Chips */}
         <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
           {[
+            { label: 'للإيجار', key: 'deal_type', val: 'rental' },
+            { label: 'تمليك (للبيع)', key: 'deal_type', val: 'for_sale' },
+            { label: 'محلات', key: 'property_type', val: 'shop' },
+            { label: 'مكاتب', key: 'property_type', val: 'office' },
             { label: 'سكن طالبات', key: 'gender', val: 'female' },
             { label: 'سكن شباب', key: 'gender', val: 'male' },
             { label: 'غرف خاصة', key: 'listing_type', val: 'private_room' },

@@ -461,9 +461,29 @@ export default function PropertyDetails() {
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
                   <h1 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white">{property.title}</h1>
+                  <span className={`px-3 py-1 text-xs font-bold rounded-full border ${
+                    property.deal_type === 'for_sale'
+                      ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400'
+                      : 'bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400'
+                  }`}>
+                    {property.deal_type === 'for_sale' ? 'تمليك (للبيع)' : 'للإيجار'}
+                  </span>
+                  {property.property_type && property.property_type !== 'apartment' && (
+                    <span className="px-3 py-1 bg-blue-500/10 border border-blue-500/20 text-blue-600 dark:text-blue-400 text-xs font-bold rounded-full">
+                      {property.property_type === 'shop'
+                        ? 'محل تجاري'
+                        : property.property_type === 'office'
+                        ? 'مكتب إداري'
+                        : property.property_type === 'land'
+                        ? 'أرض'
+                        : property.property_type === 'villa'
+                        ? 'فيلا'
+                        : 'عقار'}
+                    </span>
+                  )}
                   {property.property_number && (
                     <span className="px-3 py-1 bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 text-xs font-bold rounded-full">
-                      شقة رقم #{property.property_number}
+                      رقم #{property.property_number}
                     </span>
                   )}
                 </div>
@@ -658,10 +678,15 @@ export default function PropertyDetails() {
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
                         <span className="font-bold text-slate-900 dark:text-white text-sm">{listingTypeLabel(l.listing_type)}</span>
-                        <span className="font-black text-amber-500 text-sm whitespace-nowrap">{formatPrice(l.price)}{l.listing_type === 'shared_bed' ? ' / للسرير' : '/شهرياً'}</span>
+                        <span className="font-black text-amber-500 text-sm whitespace-nowrap">
+                          {formatPrice(l.price)}
+                          {property.deal_type === 'for_sale' ? ' / الإجمالي' : l.listing_type === 'shared_bed' ? ' / للسرير' : '/شهرياً'}
+                        </span>
                       </div>
                       <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 truncate">
-                        التأمين {formatPrice(l.deposit || 0)} · الحد الأدنى {l.minimum_months || 1} أشهر
+                        {property.deal_type === 'for_sale'
+                          ? `جدية المعاينة والتملك ${formatPrice(l.deposit || 0)}`
+                          : `التأمين ${formatPrice(l.deposit || 0)} · الحد الأدنى ${l.minimum_months || 1} أشهر`}
                       </p>
                     </div>
                   </div>
@@ -674,7 +699,7 @@ export default function PropertyDetails() {
               <div className="mt-5 p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl text-amber-800 dark:text-amber-300 text-sm">
                 <p className="font-bold text-center">تنبيه للمالك والوسيط</p>
                 <p className="mt-1 text-xs text-center opacity-90">
-                  عند تأجير الشقة عن طريق المنصة، تفرض المنصة رسوم خدمة مقدارها <strong>200 جنيه مصري</strong> فقط.
+                  عند التعامل عن طريق المنصة، تطبق رسوم خدمة المنصة.
                 </p>
               </div>
             ) : (
@@ -684,9 +709,9 @@ export default function PropertyDetails() {
                   disabled={!activeListings.length}
                   className="mt-5 w-full py-3.5 rounded-xl bg-[#FCB431] hover:bg-[#EAA01C] text-[#000616] font-black text-sm transition shadow-md disabled:opacity-50 flex items-center justify-center gap-2"
                 >
-                  <Calendar className="w-4.5 h-4.5" /> طلب حجز الشقة · 200 ج.م
+                  <Calendar className="w-4.5 h-4.5" />
+                  {property.deal_type === 'for_sale' ? 'طلب استفسار ومعاينة العقار' : 'طلب حجز الشقة'}
                 </button>
-                <p className="text-xs text-slate-400 text-center mt-2">رسوم الحجز 200 جنيه لضمان جدية الطلب</p>
               </>
             )}
           </div>
@@ -920,10 +945,7 @@ export default function PropertyDetails() {
                 />
               </div>
 
-              <div className="rounded-xl bg-slate-50 px-3 py-2 text-sm text-slate-600 flex justify-between">
-                <span>رسوم الحجز والمعاينة</span>
-                <span className="font-semibold text-brand-700">200 ج.م</span>
-              </div>
+
               {isSelectedListingSharedBed && selectedListingObj && (
                 <div className="rounded-xl bg-emerald-50 px-3 py-2 text-sm text-emerald-950 flex justify-between font-medium">
                   <span>الإيجار الشهري الإجمالي (لعدد {totalBedsBooked} سرير)</span>
