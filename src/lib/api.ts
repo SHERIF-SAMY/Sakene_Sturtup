@@ -1,8 +1,29 @@
 import supabase from './supabase';
 
 export async function authHeaders(): Promise<HeadersInit> {
-  const { data } = await supabase.auth.getSession();
-  const token = data.session?.access_token;
+  let session = (await supabase.auth.getSession()).data.session;
+  
+  // If session token is missing or near expiry, try refreshing session
+  if (!session || (session.expires_at && session.expires_at * 1000 < Date.now() + 60000)) {
+    try {
+      const { data } = await supabase.auth.refreshSession();
+      if (data.session) session = data.session;
+    } catch { /* ignore refresh error */ }
+  }
+
+  let token = session?.access_token;
+  
+  // Fallback: if no active Supabase auth session token, check cached user profile ID
+  if (!token) {
+    try {
+      const stored = localStorage.getItem('agarly_user_profile');
+      if (stored) {
+        const p = JSON.parse(stored);
+        if (p.id) token = p.id;
+      }
+    } catch { /* ignore */ }
+  }
+
   return {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
