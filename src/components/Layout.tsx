@@ -427,8 +427,8 @@ export default function Layout() {
 function navCls({ isActive }: { isActive: boolean }) {
   return `px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${
     isActive
-      ? 'bg-white dark:bg-[#0A1020] text-[#000616] dark:text-[#FCB431] shadow-sm'
-      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+      ? 'bg-[#FCB431] text-[#000616] font-black shadow-sm'
+      : 'text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-white/5'
   }`;
 }
 

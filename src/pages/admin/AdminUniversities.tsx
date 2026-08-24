@@ -39,19 +39,19 @@ export default function AdminUniversities() {
 
   return (
     <div className="space-y-6">
-      <form onSubmit={add} className="bg-white rounded-2xl border border-slate-100 p-4 flex flex-col sm:flex-row gap-3">
-        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="University name" className="flex-1 px-3 py-2.5 rounded-xl border border-slate-200" />
-        <select value={cityId} onChange={(e) => setCityId(e.target.value)} className="px-3 py-2.5 rounded-xl border border-slate-200">
-          <option value="">City</option>
+      <form onSubmit={add} className="bg-white dark:bg-[#111A30] rounded-2xl border border-slate-100 dark:border-[#1E2B4A] p-4 flex flex-col sm:flex-row gap-3 shadow-sm">
+        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="اسم الجامعة (مثال: جامعة كفر الشيخ)" className="flex-1 px-3 py-2.5 rounded-xl border border-slate-200 dark:border-[#1E2B4A] bg-white dark:bg-[#0A1020] text-slate-900 dark:text-white placeholder:text-slate-400 text-sm outline-none focus:border-amber-500" />
+        <select value={cityId} onChange={(e) => setCityId(e.target.value)} className="px-3 py-2.5 rounded-xl border border-slate-200 dark:border-[#1E2B4A] bg-white dark:bg-[#0A1020] text-slate-900 dark:text-white text-sm outline-none focus:border-amber-500">
+          <option value="">اختر المدينة</option>
           {cities.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
-        <button className="px-4 py-2.5 rounded-xl bg-brand-600 text-white font-semibold text-sm">Add</button>
+        <button className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-sm transition shadow-sm">إضافة جامعة</button>
       </form>
       <div className="grid sm:grid-cols-2 gap-3">
         {items.map((u) => (
-          <div key={u.id} className="bg-white rounded-2xl border border-slate-100 p-4">
-            <p className="font-semibold text-slate-900">{u.name}</p>
-            <p className="text-sm text-slate-500">{u.cities?.name}</p>
+          <div key={u.id} className="bg-white dark:bg-[#111A30] rounded-2xl border border-slate-100 dark:border-[#1E2B4A] p-4 shadow-sm">
+            <p className="font-bold text-slate-900 dark:text-white text-base">{u.name}</p>
+            <p className="text-sm font-semibold text-slate-500 dark:text-slate-400 mt-0.5">{u.cities?.name}</p>
           </div>
         ))}
       </div>

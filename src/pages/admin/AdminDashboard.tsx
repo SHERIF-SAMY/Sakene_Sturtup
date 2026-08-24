@@ -35,15 +35,15 @@ export default function AdminDashboard() {
       </div>
       <div className="grid lg:grid-cols-[220px_1fr] gap-6">
         <aside className="hidden lg:block">
-          <nav className="bg-white rounded-2xl border border-slate-100 p-2 sticky top-24 space-y-1">
+          <nav className="bg-white dark:bg-[#111A30] rounded-2xl border border-slate-100 dark:border-[#1E2B4A] p-2 sticky top-24 space-y-1 shadow-sm">
             {navLinks.map((l) => (
               <NavLink
                 key={l.to}
                 to={l.to}
                 end={l.end}
                 className={({ isActive }) =>
-                  `flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium transition ${
-                    isActive ? 'bg-brand-50 text-brand-700' : 'text-slate-600 hover:bg-slate-50'
+                  `flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-semibold transition ${
+                    isActive ? 'bg-amber-500/10 text-amber-500 dark:bg-amber-500/20 dark:text-amber-400' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#0A1020]'
                   }`
                 }
               >
@@ -53,15 +53,17 @@ export default function AdminDashboard() {
           </nav>
         </aside>
         <div className="min-w-0">
-          <div className="lg:hidden flex gap-2 overflow-x-auto pb-3 mb-2">
+          <div className="lg:hidden flex gap-2 overflow-x-auto pb-3 mb-2 scrollbar-none">
             {navLinks.map((l) => (
               <NavLink
                 key={l.to}
                 to={l.to}
                 end={l.end}
                 className={({ isActive }) =>
-                  `shrink-0 px-3 py-2 rounded-xl text-sm font-medium border ${
-                    isActive ? 'bg-brand-600 text-white border-brand-600' : 'bg-white text-slate-600 border-slate-200'
+                  `shrink-0 px-3.5 py-2 rounded-xl text-xs font-bold border transition ${
+                    isActive
+                      ? 'bg-amber-500 text-slate-950 border-amber-500 shadow-sm'
+                      : 'bg-white dark:bg-[#111A30] text-slate-600 dark:text-slate-300 border-slate-200 dark:border-[#1E2B4A]'
                   }`
                 }
               >

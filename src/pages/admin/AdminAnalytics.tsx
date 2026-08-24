@@ -161,23 +161,23 @@ export default function AdminAnalytics() {
       )}
 
       {/* Header Month Filter Bar */}
-      <div className="bg-white rounded-3xl border border-slate-100 p-5 shadow-sm flex flex-wrap items-center justify-between gap-4">
+      <div className="bg-white dark:bg-[#111A30] rounded-3xl border border-slate-100 dark:border-[#1E2B4A] p-5 shadow-sm flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-2xl bg-amber-500/10 dark:bg-amber-500/20 text-amber-500 dark:text-amber-400 flex items-center justify-center">
             <Calendar className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="font-bold text-slate-900 text-base">فلترة الأرباح والحسابات بالشهر</h2>
-            <p className="text-xs text-slate-500 mt-0.5">اختر الشهر لعرض صافي أرباح المنصة وحسابات العمليات المكتملة</p>
+            <h2 className="font-bold text-slate-900 dark:text-white text-base">فلترة الإحصائيات بالشهر</h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">اختر الشهر لعرض نشاط وحسابات العمليات المكتملة</p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <label className="text-xs font-semibold text-slate-500">الفترة المالية:</label>
+          <label className="text-xs font-semibold text-slate-500 dark:text-slate-400">الفترة المالية:</label>
           <select
             value={selectedMonth}
             onChange={(e) => setSelectedMonth(e.target.value)}
-            className="px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm font-bold text-slate-800 outline-none focus:border-brand-600 cursor-pointer"
+            className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-[#1E2B4A] bg-slate-50 dark:bg-[#0A1020] text-sm font-bold text-slate-800 dark:text-slate-200 outline-none focus:border-amber-500 cursor-pointer"
           >
             <option value="all">كل الأوقات (الإجمالي التراكمي)</option>
             {availableMonths.map((m) => (
@@ -190,55 +190,42 @@ export default function AdminAnalytics() {
       </div>
 
       {/* Main Stats Cards */}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-gradient-to-br from-emerald-600 to-teal-700 text-white rounded-3xl p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-emerald-100">أرباح المنصة ({formatMonthYear(selectedMonth)})</span>
-            <TrendingUp className="w-5 h-5 text-emerald-200" />
-          </div>
-          <p className="text-2xl md:text-3xl font-bold mt-2">{formatPrice(periodRevenue)}</p>
-          <p className="text-[11px] text-emerald-200 mt-1">400 ج مصري لكل عملية ناجحة (200ج مستأجر + 200ج مالك)</p>
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="bg-white dark:bg-[#111A30] rounded-3xl border border-slate-100 dark:border-[#1E2B4A] p-5 shadow-sm">
+          <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">العمليات المكتملة ({formatMonthYear(selectedMonth)})</span>
+          <p className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white mt-2">{filteredCompletedVisits.length}</p>
+          <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">عملية مؤكدة ومكتملة بالفترة</p>
         </div>
 
-        <div className="bg-white rounded-3xl border border-slate-100 p-5 shadow-sm">
-          <span className="text-xs font-medium text-slate-500">العمليات المكتملة</span>
-          <p className="text-2xl md:text-3xl font-bold text-slate-900 mt-2">{filteredCompletedVisits.length}</p>
-          <p className="text-[11px] text-slate-400 mt-1">عملية مؤكدة ومكتملة بالفترة</p>
+        <div className="bg-white dark:bg-[#111A30] rounded-3xl border border-slate-100 dark:border-[#1E2B4A] p-5 shadow-sm">
+          <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">إجمالي العقارات</span>
+          <p className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white mt-2">{stats?.properties || 0}</p>
+          <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">عقار مدرج بالنظام</p>
         </div>
 
-        <div className="bg-white rounded-3xl border border-slate-100 p-5 shadow-sm">
-          <span className="text-xs font-medium text-slate-500">إجمالي العقارات</span>
-          <p className="text-2xl md:text-3xl font-bold text-slate-900 mt-2">{stats?.properties || 0}</p>
-          <p className="text-[11px] text-slate-400 mt-1">عقار مدرج بالنظام</p>
-        </div>
-
-        <div className="bg-white rounded-3xl border border-slate-100 p-5 shadow-sm">
-          <span className="text-xs font-medium text-slate-500">إجمالي المستخدمين</span>
-          <p className="text-2xl md:text-3xl font-bold text-slate-900 mt-2">{stats?.users || 0}</p>
-          <p className="text-[11px] text-slate-400 mt-1">مستأجر ومالك ووسيط</p>
+        <div className="bg-white dark:bg-[#111A30] rounded-3xl border border-slate-100 dark:border-[#1E2B4A] p-5 shadow-sm">
+          <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">إجمالي المستخدمين</span>
+          <p className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white mt-2">{stats?.users || 0}</p>
+          <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">مستأجر ومالك ووسيط</p>
         </div>
       </div>
 
       {/* Super Admin Dashboard Section */}
       {isSuperAdmin && (
-        <div className="bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-3xl p-6 shadow-md">
-          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-700 pb-5 mb-5">
+        <div className="bg-[#111A30] dark:bg-[#111A30] border border-[#1E2B4A] text-white rounded-3xl p-6 shadow-md">
+          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#1E2B4A] pb-5 mb-5">
             <div>
               <div className="flex items-center gap-2">
-                <ShieldCheck className="w-6 h-6 text-brand-400" />
-                <h2 className="text-xl font-bold">لوحة أرباح وحسابات الأدمنز ({formatMonthYear(selectedMonth)})</h2>
+                <ShieldCheck className="w-6 h-6 text-amber-400" />
+                <h2 className="text-xl font-bold">لوحة حسابات ومتابعة الأدمنز ({formatMonthYear(selectedMonth)})</h2>
               </div>
-              <p className="text-slate-400 text-xs mt-1">تفاصيل أرباح وعدد العمليات المنفذة بواسطة كل أدمن بالفترة المختارة.</p>
+              <p className="text-slate-400 text-xs mt-1">تفاصيل وعدد العمليات المنفذة بواسطة كل أدمن بالفترة المختارة.</p>
             </div>
             <div className="flex items-center gap-3">
-              <div className="text-right">
-                <p className="text-xs text-slate-400">إجمالي أرباح الفترة</p>
-                <p className="text-xl font-bold text-emerald-400">{formatPrice(periodRevenue)}</p>
-              </div>
               <button
                 onClick={() => handleResetEarnings()}
                 disabled={resetting}
-                className="px-3.5 py-2 bg-red-600/90 hover:bg-red-600 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 transition disabled:opacity-50"
+                className="px-3.5 py-2 bg-rose-600/90 hover:bg-rose-600 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 transition disabled:opacity-50"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${resetting ? 'animate-spin' : ''}`} />
                 تصفير العدادات
@@ -248,11 +235,11 @@ export default function AdminAnalytics() {
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {adminMonthlyStats.map((adm) => (
-              <div key={adm.id} className="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-4 flex flex-col justify-between">
+              <div key={adm.id} className="bg-[#0A1020] border border-[#1E2B4A] rounded-2xl p-4 flex flex-col justify-between">
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <span className="font-bold text-slate-100 text-base">{adm.name}</span>
-                    <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded bg-slate-700 text-slate-300">
+                    <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded bg-[#111A30] text-slate-300 border border-[#1E2B4A]">
                       {adm.role}
                     </span>
                   </div>
@@ -261,16 +248,12 @@ export default function AdminAnalytics() {
                       <span className="flex items-center gap-1"><CheckCircle className="w-3.5 h-3.5 text-emerald-400" /> عمليات الفترة المكتملة:</span>
                       <span className="font-bold text-white">{adm.periodCompletedCount}</span>
                     </p>
-                    <p className="flex justify-between">
-                      <span className="flex items-center gap-1"><DollarSign className="w-3.5 h-3.5 text-amber-400" /> عمولات الفترة (400ج/عملية):</span>
-                      <span className="font-bold text-emerald-400">{formatPrice(adm.periodEarnings)}</span>
-                    </p>
                   </div>
                 </div>
                 <button
                   onClick={() => handleResetEarnings(adm.id)}
                   disabled={resetting}
-                  className="mt-4 w-full py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs font-semibold rounded-lg transition"
+                  className="mt-4 w-full py-1.5 bg-[#111A30] hover:bg-[#1E2B4A] text-slate-300 text-xs font-semibold rounded-lg transition border border-[#1E2B4A]"
                 >
                   تصفير عداد الأدمن
                 </button>
@@ -281,26 +264,26 @@ export default function AdminAnalytics() {
       )}
 
       {/* Booking status stats */}
-      <div className="bg-white rounded-3xl border border-slate-100 p-6 shadow-sm">
-        <h3 className="font-bold text-slate-900 mb-4">حالات الحجوزات الكلية بالنظام</h3>
+      <div className="bg-white dark:bg-[#111A30] rounded-3xl border border-slate-100 dark:border-[#1E2B4A] p-6 shadow-sm">
+        <h3 className="font-bold text-slate-900 dark:text-white mb-4">حالات الحجوزات الكلية بالنظام</h3>
         <div className="space-y-3">
           {Object.entries(byStatus).map(([status, count]) => {
             const pct = stats?.recentVisits?.length ? Math.round((count / stats.recentVisits.length) * 100) : 0;
             return (
               <div key={status}>
                 <div className="flex justify-between text-sm mb-1">
-                  <span className="capitalize font-medium text-slate-700">
+                  <span className="capitalize font-medium text-slate-700 dark:text-slate-300">
                     {status === 'pending' ? 'قيد الانتظار' : status === 'confirmed' ? 'مؤكد' : status === 'completed' ? 'مكتمل' : status}
                   </span>
-                  <span className="text-slate-500">{count} ({pct}%)</span>
+                  <span className="text-slate-500 dark:text-slate-400 font-semibold">{count} ({pct}%)</span>
                 </div>
-                <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
-                  <div className="h-full bg-brand-500 rounded-full" style={{ width: `${pct}%` }} />
+                <div className="h-2 rounded-full bg-slate-100 dark:bg-[#0A1020] overflow-hidden">
+                  <div className="h-full bg-amber-500 rounded-full" style={{ width: `${pct}%` }} />
                 </div>
               </div>
             );
           })}
-          {!Object.keys(byStatus).length && <p className="text-sm text-slate-500">لا توجد بيانات حجوزات حالياً.</p>}
+          {!Object.keys(byStatus).length && <p className="text-sm text-slate-500 dark:text-slate-400">لا توجد بيانات حجوزات حالياً.</p>}
         </div>
       </div>
     </div>

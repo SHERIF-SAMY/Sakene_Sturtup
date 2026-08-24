@@ -275,31 +275,27 @@ export default async function handler(req, res) {
       const adminNotifs = (admins || []).map((admin) => ({
         user_id: admin.id,
         title: '🔔 طلب حجز جديد',
-        body: `${tenantName} طلب حجز ${propNum} "${propTitle}" بتاريخ ${visit_date} الساعة ${visit_time}. رسوم الحجز: 200 ج.`,
+        body: `${tenantName} طلب حجز ${propNum} "${propTitle}" بتاريخ ${visit_date} الساعة ${visit_time}.`,
         type: 'new_visit',
         is_read: false,
       }));
       if (adminNotifs.length) await supabase.from('notifications').insert(adminNotifs);
 
-      // Notify tenant with payment instructions
+      // Notify tenant
       await supabase.from('notifications').insert({
         user_id: student_id,
         title: '✅ تم استلام طلب الحجز',
-        body: `تم استلام طلب حجزك لـ ${propNum} "${propTitle}" بتاريخ ${visit_date} الفترة ${visit_time}. لإتمام الحجز، يرجى دفع 200 ج رسوم حجز عبر فودافون كاش أو إنستا باي على الرقم: 01016024660 وإرسال صورة الإيصال.`,
+        body: `تم استلام طلب حجزك لـ ${propNum} "${propTitle}" بتاريخ ${visit_date} الفترة ${visit_time}. سيتم التواصل معك لمتابعة إجراءات المعاينة.`,
         type: 'new_visit',
         is_read: false,
       });
 
-      // Notify owner about the booking and the platform fee
+      // Notify owner about the booking
       if (ownerUserId) {
-        const { data: ownerProf } = await supabase.from('profiles').select('is_broker_account').eq('id', ownerUserId).maybeSingle();
-        const isBrokerAcc = ownerProf?.is_broker_account;
         await supabase.from('notifications').insert({
           user_id: ownerUserId,
           title: '🏠 طلب حجز لشقتك',
-          body: isBrokerAcc
-            ? `يوجد طلب حجز جديد لشقتك ${propNum} "${propTitle}" بتاريخ ${visit_date}. في حالة تم الاتفاق الكامل مع المستأجر، هناك رسوم خدمة بقيمة 400 ج تُدفع عبر فودافون كاش أو إنستا باي على الرقم: 01016024660.`
-            : `يوجد طلب حجز جديد لشقتك ${propNum} "${propTitle}" بتاريخ ${visit_date}. في حالة تأجير شقتك، هناك رسوم خدمة بقيمة 200 ج تُدفع عبر فودافون كاش أو إنستا باي على الرقم: 01016024660.`,
+          body: `يوجد طلب حجز جديد لشقتك ${propNum} "${propTitle}" بتاريخ ${visit_date}.`,
           type: 'new_visit',
           is_read: false,
         });

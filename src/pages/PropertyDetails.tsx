@@ -670,25 +670,13 @@ export default function PropertyDetails() {
               {!activeListings.length && <p className="text-sm text-slate-500 dark:text-slate-400">لا توجد عروض مخصصة حالياً.</p>}
             </div>
 
-            {isOwnerOrBroker ? (
-              <div className="mt-5 p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl text-amber-800 dark:text-amber-300 text-sm">
-                <p className="font-bold text-center">تنبيه للمالك والوسيط</p>
-                <p className="mt-1 text-xs text-center opacity-90">
-                  عند تأجير الشقة عن طريق المنصة، تفرض المنصة رسوم خدمة مقدارها <strong>200 جنيه مصري</strong> فقط.
-                </p>
-              </div>
-            ) : (
-              <>
-                <button
-                  onClick={() => setShowBook(true)}
-                  disabled={!activeListings.length}
-                  className="mt-5 w-full py-3.5 rounded-xl bg-[#FCB431] hover:bg-[#EAA01C] text-[#000616] font-black text-sm transition shadow-md disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  <Calendar className="w-4.5 h-4.5" /> طلب حجز الشقة · 200 ج.م
-                </button>
-                <p className="text-xs text-slate-400 text-center mt-2">رسوم الحجز 200 جنيه لضمان جدية الطلب</p>
-              </>
-            )}
+            <button
+              onClick={() => setShowBook(true)}
+              disabled={!activeListings.length}
+              className="mt-5 w-full py-3.5 rounded-xl bg-[#FCB431] hover:bg-[#EAA01C] text-[#000616] font-black text-sm transition shadow-md disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              <Calendar className="w-4.5 h-4.5" /> طلب حجز الشقة
+            </button>
           </div>
 
           {broker && (() => {
@@ -757,12 +745,12 @@ export default function PropertyDetails() {
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowBook(false)} />
           <div className="relative bg-white dark:bg-[#111A30] w-full max-w-md rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl border border-slate-100 dark:border-[#1E2B4A] max-h-[90vh] overflow-y-auto z-10 text-slate-900 dark:text-white">
-            <h3 className="text-xl font-bold text-slate-900 dark:text-white">طلب حجز المعاينة</h3>
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white">طلب حجز الشقة</h3>
             <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">اختر التاريخ والوقت المناسبين للمعاينة.</p>
 
             <div className="mt-5 space-y-3">
               <div>
-                <label className="text-xs font-semibold text-slate-500 uppercase">التاريخ</label>
+                <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">التاريخ</label>
                 <input
                   type="date"
                   value={visitDate}
@@ -771,15 +759,15 @@ export default function PropertyDetails() {
                     setVisitDate(e.target.value);
                     fetchBookedSlots(e.target.value);
                   }}
-                  className="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200"
+                  className="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-[#1E2B4A] bg-white dark:bg-[#0A1020] text-slate-900 dark:text-white text-sm"
                 />
               </div>
               <div>
-                <label className="text-xs font-semibold text-slate-500 uppercase">الوقت المفضل</label>
+                <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">الوقت المفضل</label>
                 <select
                   value={visitTime}
                   onChange={(e) => setVisitTime(e.target.value)}
-                  className="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200"
+                  className="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-[#1E2B4A] bg-white dark:bg-[#0A1020] text-slate-900 dark:text-white text-sm"
                 >
                   {timeSlots.map((t) => (
                     <option key={t} value={t}>{t}</option>
@@ -788,15 +776,15 @@ export default function PropertyDetails() {
               </div>
 
               {isSelectedListingSharedBed && (
-                <div className="p-3.5 bg-brand-50/40 dark:bg-brand-950/10 rounded-xl border border-brand-100 dark:border-brand-900 space-y-3">
-                  <p className="text-xs font-bold text-brand-900 dark:text-brand-400">اختر الغرفة وعدد الأسرة المطلوبة</p>
+                <div className="p-3.5 bg-amber-500/10 dark:bg-amber-500/10 rounded-xl border border-amber-500/20 space-y-3">
+                  <p className="text-xs font-bold text-amber-600 dark:text-amber-400">اختر الغرفة وعدد الأسرة المطلوبة</p>
                   <div className="space-y-2 max-h-48 overflow-y-auto">
                     {(property?.rooms || []).map((room) => {
                       const available = room.beds ? room.beds.filter((b: any) => b.status === 'available').length : 0;
                       const isSelected = selectedBeds[room.id] !== undefined;
 
                       return (
-                        <div key={room.id} className="flex flex-col gap-2 p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700">
+                        <div key={room.id} className="flex flex-col gap-2 p-2 rounded-xl bg-white dark:bg-[#0A1020] border border-slate-100 dark:border-[#1E2B4A]">
                           <label className="flex items-center gap-2 cursor-pointer text-sm font-semibold text-slate-800 dark:text-slate-200">
                             <input
                               type="checkbox"
@@ -813,10 +801,10 @@ export default function PropertyDetails() {
                                   });
                                 }
                               }}
-                              className="w-4 h-4 rounded text-brand-600 focus:ring-brand-500"
+                              className="w-4 h-4 rounded text-amber-500 focus:ring-amber-500"
                             />
                             <span>{room.name}</span>
-                            <span className="text-xs font-normal text-slate-500">({available} سرير متاح)</span>
+                            <span className="text-xs font-normal text-slate-500 dark:text-slate-400">({available} سرير متاح)</span>
                           </label>
                           {isSelected && (
                             <div className="flex items-center gap-2 ps-6">
@@ -827,7 +815,7 @@ export default function PropertyDetails() {
                                   const val = Number(e.target.value);
                                   setSelectedBeds((prev) => ({ ...prev, [room.id]: val }));
                                 }}
-                                className="px-2 py-1 text-xs rounded border border-slate-200 bg-white dark:bg-slate-700 dark:text-white"
+                                className="px-2 py-1 text-xs rounded border border-slate-200 dark:border-[#1E2B4A] bg-white dark:bg-[#111A30] text-slate-900 dark:text-white"
                               >
                                 {Array.from({ length: available }, (_, i) => (
                                   <option key={i + 1} value={i + 1}>
@@ -845,40 +833,40 @@ export default function PropertyDetails() {
               )}
 
               {/* Rent Duration Inputs */}
-              <div className="p-3 bg-brand-50/60 rounded-xl border border-brand-100 space-y-2">
-                <p className="text-xs font-bold text-brand-900">فترة الإيجار المطلوبة (اختياري)</p>
+              <div className="p-3 bg-slate-50 dark:bg-[#0A1020] rounded-xl border border-slate-200 dark:border-[#1E2B4A] space-y-2">
+                <p className="text-xs font-bold text-slate-800 dark:text-slate-200">فترة الإيجار المطلوبة (اختياري)</p>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="text-[11px] text-slate-600">تاريخ بدء الإيجار</label>
+                    <label className="text-[11px] text-slate-600 dark:text-slate-400">تاريخ بدء الإيجار</label>
                     <input
                       type="date"
                       value={rentStartDate}
                       min={new Date().toISOString().slice(0, 10)}
                       onChange={(e) => setRentStartDate(e.target.value)}
-                      className="mt-0.5 w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 bg-white"
+                      className="mt-0.5 w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 dark:border-[#1E2B4A] bg-white dark:bg-[#111A30] text-slate-900 dark:text-white"
                     />
                   </div>
                   <div>
-                    <label className="text-[11px] text-slate-600">تاريخ نهاية الإيجار</label>
+                    <label className="text-[11px] text-slate-600 dark:text-slate-400">تاريخ نهاية الإيجار</label>
                     <input
                       type="date"
                       value={rentEndDate}
                       min={rentStartDate || new Date().toISOString().slice(0, 10)}
                       onChange={(e) => setRentEndDate(e.target.value)}
-                      className="mt-0.5 w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 bg-white"
+                      className="mt-0.5 w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 dark:border-[#1E2B4A] bg-white dark:bg-[#111A30] text-slate-900 dark:text-white"
                     />
                   </div>
                 </div>
               </div>
 
               {/* Broker Referral Option */}
-              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
-                <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-700">
+              <div className="p-3 bg-slate-50 dark:bg-[#0A1020] rounded-xl border border-slate-200 dark:border-[#1E2B4A] space-y-2">
+                <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-700 dark:text-slate-300">
                   <input
                     type="checkbox"
                     checked={viaBroker}
                     onChange={(e) => setViaBroker(e.target.checked)}
-                    className="w-4 h-4 rounded text-brand-600"
+                    className="w-4 h-4 rounded text-amber-500 focus:ring-amber-500"
                   />
                   هل أنت قادم عن طريق سمسار عقاري؟
                 </label>
@@ -886,23 +874,23 @@ export default function PropertyDetails() {
                 {viaBroker && (
                   <div className="space-y-2 pt-2">
                     <div>
-                      <label className="text-xs text-slate-600">اسم السمسار</label>
+                      <label className="text-xs text-slate-600 dark:text-slate-400">اسم السمسار</label>
                       <input
                         type="text"
                         value={referralBrokerName}
                         onChange={(e) => setReferralBrokerName(e.target.value)}
                         placeholder="اسم السمسار العقاري"
-                        className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200"
+                        className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-[#1E2B4A] bg-white dark:bg-[#111A30] text-slate-900 dark:text-white placeholder:text-slate-400"
                       />
                     </div>
                     <div>
-                      <label className="text-xs text-slate-600">رقم هاتف السمسار</label>
+                      <label className="text-xs text-slate-600 dark:text-slate-400">رقم هاتف السمسار</label>
                       <input
                         type="tel"
                         value={referralBrokerPhone}
                         onChange={(e) => setReferralBrokerPhone(e.target.value)}
                         placeholder="01xxxxxxxxx"
-                        className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200"
+                        className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-[#1E2B4A] bg-white dark:bg-[#111A30] text-slate-900 dark:text-white placeholder:text-slate-400"
                       />
                     </div>
                   </div>
@@ -910,35 +898,36 @@ export default function PropertyDetails() {
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-500 uppercase">ملاحظات إضافية</label>
+                <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">ملاحظات إضافية</label>
                 <textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   rows={2}
                   placeholder="أي تفاصيل أو رغبات خاصة؟"
-                  className="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200 resize-none"
+                  className="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-[#1E2B4A] bg-white dark:bg-[#0A1020] text-slate-900 dark:text-white placeholder:text-slate-400 resize-none text-sm"
                 />
               </div>
 
-              <div className="rounded-xl bg-slate-50 px-3 py-2 text-sm text-slate-600 flex justify-between">
-                <span>رسوم الحجز والمعاينة</span>
-                <span className="font-semibold text-brand-700">200 ج.م</span>
-              </div>
               {isSelectedListingSharedBed && selectedListingObj && (
-                <div className="rounded-xl bg-emerald-50 px-3 py-2 text-sm text-emerald-950 flex justify-between font-medium">
+                <div className="rounded-xl bg-emerald-500/10 px-3 py-2 text-sm text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex justify-between font-medium">
                   <span>الإيجار الشهري الإجمالي (لعدد {totalBedsBooked} سرير)</span>
-                  <span className="font-bold text-emerald-700">{formatPrice(selectedListingObj.price * totalBedsBooked)}/شهرياً</span>
+                  <span className="font-bold text-emerald-600 dark:text-emerald-400">{formatPrice(selectedListingObj.price * totalBedsBooked)}/شهرياً</span>
                 </div>
               )}
-              {error && <p className="text-sm text-red-600">{error}</p>}
+              {error && <p className="text-sm text-rose-500 font-semibold">{error}</p>}
             </div>
 
             <div className="mt-5 grid grid-cols-2 gap-2">
-              <button onClick={() => setShowBook(false)} className="py-3 rounded-xl border border-slate-200 font-semibold">إلغاء</button>
+              <button
+                onClick={() => setShowBook(false)}
+                className="py-3 rounded-xl border border-slate-200 dark:border-[#1E2B4A] font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#0A1020] transition"
+              >
+                إلغاء
+              </button>
               <button
                 onClick={bookVisit}
                 disabled={booking}
-                className="py-3 rounded-xl bg-brand-600 text-white font-semibold disabled:opacity-60"
+                className="py-3 rounded-xl bg-[#FCB431] hover:bg-[#EAA01C] text-[#000616] font-black disabled:opacity-60 transition shadow-md"
               >
                 {booking ? 'جاري الحجز…' : 'تأكيد الحجز'}
               </button>

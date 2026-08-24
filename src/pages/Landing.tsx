@@ -211,12 +211,12 @@ export default function Landing() {
     <div className="overflow-hidden">
       {showContact && <ContactModal onClose={() => setShowContact(false)} />}
 
-      {/* ── 1. HERO SECTION (Midnight #000616 & Amber #FCB431) ─────────── */}
-      <section className="relative overflow-hidden bg-[#000616] text-white min-h-[640px] flex items-center pt-8 pb-16 border-b border-[#1E2B4A]">
+      {/* ── 1. HERO SECTION ─────────── */}
+      <section className="relative overflow-hidden bg-gradient-to-b from-slate-50 via-amber-50/20 to-white dark:from-[#000616] dark:via-[#0A1020] dark:to-[#000616] text-slate-900 dark:text-white min-h-[640px] flex items-center pt-8 pb-16 border-b border-slate-200/80 dark:border-[#1E2B4A] transition-colors">
         {/* Background glow & modern geometric accents */}
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute -top-32 right-1/4 w-[500px] h-[500px] rounded-full bg-[#FCB431]/10 blur-[130px]" />
-          <div className="absolute bottom-0 -left-20 w-[450px] h-[450px] rounded-full bg-[#2B3143]/40 blur-[120px]" />
+          <div className="absolute -top-32 right-1/4 w-[500px] h-[500px] rounded-full bg-[#FCB431]/15 dark:bg-[#FCB431]/10 blur-[130px]" />
+          <div className="absolute bottom-0 -left-20 w-[450px] h-[450px] rounded-full bg-amber-500/10 dark:bg-[#2B3143]/40 blur-[120px]" />
           <div className="absolute top-1/3 left-10 w-2 h-2 rounded-full bg-[#FCB431] animate-ping" />
           <div className="absolute bottom-1/4 right-12 w-3 h-3 rounded-full bg-[#FCB431]/40" />
         </div>
@@ -231,19 +231,19 @@ export default function Landing() {
               className="lg:col-span-7 space-y-6 text-center lg:text-start"
             >
               {/* Badge */}
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#111A30] border border-[#1E2B4A] text-xs font-bold text-[#FCB431] shadow-sm">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white dark:bg-[#111A30] border border-amber-200 dark:border-[#1E2B4A] text-xs font-bold text-amber-600 dark:text-[#FCB431] shadow-sm">
                 <Sparkles className="w-3.5 h-3.5" />
                 <span>المنصة الطلابية الأولى لتأجير الشقق والغرف</span>
               </div>
 
               {/* Main Headline */}
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black leading-[1.15] tracking-tight">
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black leading-[1.15] tracking-tight text-slate-900 dark:text-white">
                 ابحث. احجز. استقر.<br />
-                <span className="text-[#FCB431]">مع اجرلى، السكن بقى أسهل!</span>
+                <span className="text-amber-500 dark:text-[#FCB431]">مع اجرلى، السكن بقى أسهل!</span>
               </h1>
 
               {/* Subheadline */}
-              <p className="text-base sm:text-lg text-slate-300 max-w-2xl leading-relaxed font-medium">
+              <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 max-w-2xl leading-relaxed font-medium">
                 منصة ذكية تربط بين طلاب الجامعات وأصحاب الشقق والسماسرة، لتجربة إيجار سهلة، سريعة، وآمنة بدون وسيط عشوائي أو صور مضللة.
               </p>
 
@@ -251,7 +251,7 @@ export default function Landing() {
               <div className="pt-2">
                 <form
                   onSubmit={handleSearch}
-                  className="bg-[#111A30]/90 backdrop-blur-xl border border-[#1E2B4A] rounded-3xl p-3 shadow-2xl shadow-black/80 max-w-2xl text-slate-900 dark:text-white"
+                  className="bg-white/95 dark:bg-[#111A30]/90 backdrop-blur-xl border border-slate-200 dark:border-[#1E2B4A] rounded-3xl p-3 shadow-xl dark:shadow-2xl text-slate-900 dark:text-white"
                 >
                   {/* Property type pills */}
                   <div className="flex items-center gap-2 mb-3 px-1 overflow-x-auto pb-1 scrollbar-none">
@@ -267,8 +267,8 @@ export default function Landing() {
                         onClick={() => setSelectedType(t.id)}
                         className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition shrink-0 ${
                           selectedType === t.id
-                            ? 'bg-[#FCB431] text-[#000616] shadow-sm'
-                            : 'bg-[#1E2B4A]/60 text-slate-300 hover:bg-[#1E2B4A]'
+                            ? 'bg-[#FCB431] text-[#000616] font-black shadow-sm'
+                            : 'bg-slate-100 dark:bg-[#1E2B4A]/60 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-[#1E2B4A]'
                         }`}
                       >
                         {t.label}
@@ -277,18 +277,18 @@ export default function Landing() {
                   </div>
 
                   <div className="flex flex-col sm:flex-row gap-2">
-                    <div className="flex items-center gap-2.5 px-4 py-3.5 rounded-2xl bg-[#000616]/70 border border-[#1E2B4A] flex-1">
-                      <Search className="w-5 h-5 text-[#FCB431] shrink-0" />
+                    <div className="flex items-center gap-2.5 px-4 py-3.5 rounded-2xl bg-slate-50 dark:bg-[#000616]/70 border border-slate-200 dark:border-[#1E2B4A] flex-1">
+                      <Search className="w-5 h-5 text-amber-500 dark:text-[#FCB431] shrink-0" />
                       <input
                         value={q}
                         onChange={(e) => setQ(e.target.value)}
                         placeholder="ابحث عن منطقة، جامعة، أو اسم سكن..."
-                        className="w-full bg-transparent outline-none text-sm text-white placeholder:text-slate-400 font-medium"
+                        className="w-full bg-transparent outline-none text-sm text-slate-900 dark:text-white placeholder:text-slate-400 font-medium"
                       />
                     </div>
                     <button
                       type="submit"
-                      className="px-8 py-3.5 rounded-2xl bg-[#FCB431] hover:bg-[#EAA01C] text-[#000616] font-black text-sm transition flex items-center justify-center gap-2 shrink-0 shadow-lg shadow-[#FCB431]/20 active:scale-95"
+                      className="px-8 py-3.5 rounded-2xl bg-[#FCB431] hover:bg-[#EAA01C] text-[#000616] font-black text-sm transition flex items-center justify-center gap-2 shrink-0 shadow-lg shadow-amber-500/20 active:scale-95"
                     >
                       <Search className="w-4 h-4" />
                       <span>بحث الآن</span>
@@ -297,18 +297,18 @@ export default function Landing() {
                 </form>
               </div>
 
-              {/* Fast Trust Stats Pills from Brand Identity */}
-              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 pt-2 text-xs font-bold text-slate-300">
-                <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-[#111A30] border border-[#1E2B4A]">
-                  <Star className="w-4 h-4 text-[#FCB431] fill-current" />
+              {/* Fast Trust Stats Pills */}
+              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 pt-2 text-xs font-bold text-slate-700 dark:text-slate-300">
+                <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white dark:bg-[#111A30] border border-slate-200 dark:border-[#1E2B4A] shadow-sm">
+                  <Star className="w-4 h-4 text-amber-500 dark:text-[#FCB431] fill-current" />
                   <span>أفضل العروض والأسعار</span>
                 </div>
-                <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-[#111A30] border border-[#1E2B4A]">
-                  <Zap className="w-4 h-4 text-[#FCB431]" />
+                <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white dark:bg-[#111A30] border border-slate-200 dark:border-[#1E2B4A] shadow-sm">
+                  <Zap className="w-4 h-4 text-amber-500 dark:text-[#FCB431]" />
                   <span>سريع وسهل بالكامل</span>
                 </div>
-                <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-[#111A30] border border-[#1E2B4A]">
-                  <ShieldCheck className="w-4 h-4 text-[#FCB431]" />
+                <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white dark:bg-[#111A30] border border-slate-200 dark:border-[#1E2B4A] shadow-sm">
+                  <ShieldCheck className="w-4 h-4 text-amber-500 dark:text-[#FCB431]" />
                   <span>تسريع وموثوق 100%</span>
                 </div>
               </div>
@@ -342,28 +342,28 @@ export default function Landing() {
 
                   return (
                     <Link to={heroProperty ? `/properties/${heroProperty.id}` : '/search'} className="block">
-                      <div className="relative rounded-3xl overflow-hidden border-2 border-[#1E2B4A] shadow-2xl bg-[#111A30] group cursor-pointer">
+                      <div className="relative rounded-3xl overflow-hidden border-2 border-slate-200 dark:border-[#1E2B4A] shadow-2xl bg-white dark:bg-[#111A30] group cursor-pointer">
                         <img
                           src={heroImg}
                           alt={heroTitle}
                           className="w-full h-80 sm:h-96 object-cover group-hover:scale-105 transition-transform duration-700"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#000616] via-transparent to-transparent" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-transparent to-transparent dark:from-[#000616]" />
                         
                         {/* Floating badge inside hero graphic */}
-                        <div className="absolute bottom-4 inset-x-4 p-4 rounded-2xl bg-[#000616]/90 backdrop-blur-md border border-[#1E2B4A] flex items-center justify-between">
+                        <div className="absolute bottom-4 inset-x-4 p-4 rounded-2xl bg-white/95 dark:bg-[#000616]/90 backdrop-blur-md border border-slate-200 dark:border-[#1E2B4A] flex items-center justify-between shadow-lg">
                           <div>
                             {(isVerified || heroProperty?.is_featured) && (
                               <span className="px-2 py-0.5 rounded-md bg-[#FCB431] text-[#000616] text-[10px] font-black">
                                 موثق من أجرلي
                               </span>
                             )}
-                            <h4 className="text-sm font-bold text-white mt-1 line-clamp-1">{heroTitle}</h4>
-                            <p className="text-xs text-slate-400">{heroLocation}</p>
+                            <h4 className="text-sm font-bold text-slate-900 dark:text-white mt-1 line-clamp-1">{heroTitle}</h4>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">{heroLocation}</p>
                           </div>
                           <div className="text-end">
-                            <span className="text-xs text-slate-400 block">تبدأ من</span>
-                            <span className="text-base font-black text-[#FCB431]">
+                            <span className="text-xs text-slate-500 dark:text-slate-400 block">تبدأ من</span>
+                            <span className="text-base font-black text-amber-500 dark:text-[#FCB431]">
                               {heroPrice ? `${heroPrice.toLocaleString('ar-EG')} ج.م` : '---'}
                             </span>
                           </div>

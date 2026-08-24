@@ -31,15 +31,15 @@ export default function AdminOverview() {
   return (
     <div className="space-y-6">
       <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
-        <div className="bg-gradient-to-br from-emerald-600 to-teal-700 text-white rounded-2xl p-5 shadow-sm">
+        <div className="bg-gradient-to-br from-amber-500 to-amber-600 text-slate-950 rounded-2xl p-5 shadow-sm">
           <div className="flex items-center justify-between">
-            <div className="w-10 h-10 rounded-xl bg-white/20 text-white flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-slate-950/10 text-slate-950 flex items-center justify-center">
               <TrendingUp className="w-5 h-5" />
             </div>
-            <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/40 font-bold">400 ج / عملية</span>
+            <span className="text-xs px-2.5 py-0.5 rounded-full bg-slate-950/20 font-black">إجمالي النشاط</span>
           </div>
-          <p className="mt-4 text-3xl font-bold">{formatPrice(stats?.totalRevenue || 0)}</p>
-          <p className="text-xs text-emerald-100 mt-1">أرباح المنصة ({stats?.totalCompletedVisits || 0} عملية مكتملة)</p>
+          <p className="mt-4 text-3xl font-black">{stats?.totalCompletedVisits || 0}</p>
+          <p className="text-xs font-bold text-slate-900 mt-1">حجوزات وعمليات إيجار مكتملة بنجاح</p>
         </div>
         <Card icon={Users} label="المستخدمين" value={stats?.users || 0} />
         <Card icon={Building2} label="العقارات" value={stats?.properties || 0} />
@@ -48,13 +48,13 @@ export default function AdminOverview() {
         <Card icon={Star} label="التقييمات" value={stats?.reviews || 0} />
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-100 p-6">
-        <h3 className="font-bold text-slate-900 mb-4">Users by role</h3>
+      <div className="bg-white dark:bg-[#111A30] rounded-2xl border border-slate-100 dark:border-[#1E2B4A] p-6 shadow-sm">
+        <h3 className="font-bold text-slate-900 dark:text-white mb-4">المستخدمين حسب نوع الحساب</h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {Object.entries(stats?.roles || {}).map(([role, count]) => (
-            <div key={role} className="rounded-xl bg-slate-50 p-4 text-center">
-              <p className="text-2xl font-bold text-slate-900">{count}</p>
-              <p className="text-xs text-slate-500 capitalize">{role}</p>
+            <div key={role} className="rounded-xl bg-slate-50 dark:bg-[#0A1020] p-4 text-center border border-slate-100 dark:border-[#1E2B4A]">
+              <p className="text-2xl font-bold text-slate-900 dark:text-white">{count}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 capitalize mt-1 font-semibold">{role}</p>
             </div>
           ))}
         </div>
@@ -65,12 +65,12 @@ export default function AdminOverview() {
 
 function Card({ icon: Icon, label, value }: { icon: React.ComponentType<{ className?: string }>; label: string; value: number }) {
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 p-5">
-      <div className="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center">
+    <div className="bg-white dark:bg-[#111A30] rounded-2xl border border-slate-100 dark:border-[#1E2B4A] p-5 shadow-sm">
+      <div className="w-10 h-10 rounded-xl bg-amber-500/10 dark:bg-amber-500/20 text-amber-500 dark:text-amber-400 flex items-center justify-center">
         <Icon className="w-5 h-5" />
       </div>
-      <p className="mt-4 text-2xl font-bold text-slate-900">{value}</p>
-      <p className="text-sm text-slate-500">{label}</p>
+      <p className="mt-4 text-2xl font-bold text-slate-900 dark:text-white">{value}</p>
+      <p className="text-sm font-semibold text-slate-500 dark:text-slate-400 mt-0.5">{label}</p>
     </div>
   );
 }

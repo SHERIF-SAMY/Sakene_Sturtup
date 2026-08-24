@@ -80,46 +80,46 @@ export default function AdminUsers() {
           type="text"
           value={search}
           onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-          placeholder="Search by name or email…"
-          className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-sm outline-none focus:border-brand-500"
+          placeholder="ابحث بالاسم أو البريد الإلكتروني…"
+          className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-[#1E2B4A] bg-white dark:bg-[#111A30] text-slate-900 dark:text-white placeholder:text-slate-400 text-sm outline-none focus:border-amber-500 shadow-sm"
         />
         <select
           value={roleFilter}
           onChange={(e) => { setRoleFilter(e.target.value); setPage(1); }}
-          className="px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-sm"
+          className="px-3 py-2.5 rounded-xl border border-slate-200 dark:border-[#1E2B4A] bg-white dark:bg-[#111A30] text-slate-900 dark:text-white text-sm outline-none shadow-sm"
         >
-          <option value="">All roles</option>
-          <option value="tenant">Tenant</option>
-          <option value="student">Student</option>
-          <option value="owner">Owner</option>
-          <option value="broker">Broker</option>
-          <option value="admin">Admin</option>
-          <option value="super_admin">Super Admin</option>
+          <option value="">جميع الأدوار</option>
+          <option value="tenant">مستأجر (Tenant)</option>
+          <option value="student">طالب (Student)</option>
+          <option value="owner">مالك (Owner)</option>
+          <option value="broker">سمسار (Broker)</option>
+          <option value="admin">أدمن (Admin)</option>
+          <option value="super_admin">سوبر أدمن (Super Admin)</option>
         </select>
       </div>
 
-      <p className="text-xs text-slate-400">
-        Showing {paginated.length} of {filtered.length} users (total: {users.length})
+      <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold">
+        عرض {paginated.length} من أصل {filtered.length} مستخدم (الإجمالي: {users.length})
       </p>
 
-      <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
+      <div className="bg-white dark:bg-[#111A30] rounded-2xl border border-slate-100 dark:border-[#1E2B4A] overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
+          <table className="w-full text-sm text-start">
+            <thead className="bg-slate-50 dark:bg-[#0A1020] text-start text-xs uppercase text-slate-500 dark:text-slate-400 border-b border-slate-100 dark:border-[#1E2B4A]">
               <tr>
-                <th className="px-4 py-3">User</th>
-                <th className="px-4 py-3">Role</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Verified</th>
-                <th className="px-4 py-3">Actions</th>
+                <th className="px-4 py-3 text-start">المستخدم</th>
+                <th className="px-4 py-3 text-start">نوع الحساب</th>
+                <th className="px-4 py-3 text-start">الحالة</th>
+                <th className="px-4 py-3 text-start">موثق</th>
+                <th className="px-4 py-3 text-start">إجراءات</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-slate-100 dark:divide-[#1E2B4A]">
               {paginated.map((u) => (
-                <tr key={u.id} className="border-t border-slate-100">
+                <tr key={u.id} className="hover:bg-slate-50/50 dark:hover:bg-[#0A1020]/50 transition">
                   <td className="px-4 py-3">
-                    <p className="font-semibold text-slate-900">{u.first_name} {u.last_name}</p>
-                    <p className="text-xs text-slate-500">{u.email}</p>
+                    <p className="font-bold text-slate-900 dark:text-white">{u.first_name} {u.last_name}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{u.email}</p>
                   </td>
                   <td className="px-4 py-3">
                     <select
@@ -129,7 +129,7 @@ export default function AdminUsers() {
                         await apiSend('/api/profiles', 'PUT', { id: u.id, role: newRole });
                         load();
                       }}
-                      className="px-2 py-1 rounded-lg border border-slate-200 text-xs font-semibold capitalize bg-slate-50"
+                      className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-[#1E2B4A] text-xs font-semibold capitalize bg-slate-50 dark:bg-[#0A1020] text-slate-900 dark:text-white"
                     >
                       <option value="tenant">tenant</option>
                       <option value="student">student</option>
@@ -139,24 +139,24 @@ export default function AdminUsers() {
                       <option value="super_admin">super_admin</option>
                     </select>
                   </td>
-                  <td className="px-4 py-3 capitalize">{u.status}</td>
-                  <td className="px-4 py-3">{u.is_verified ? 'Yes' : 'No'}</td>
-                  <td className="px-4 py-3 space-x-2">
-                    <button onClick={() => toggleVerify(u)} className="text-xs font-semibold text-brand-600">
-                      {u.is_verified ? 'Unverify' : 'Verify'}
+                  <td className="px-4 py-3 capitalize font-semibold text-slate-700 dark:text-slate-300">{u.status}</td>
+                  <td className="px-4 py-3 font-semibold text-slate-700 dark:text-slate-300">{u.is_verified ? 'نعم' : 'لا'}</td>
+                  <td className="px-4 py-3 space-x-2 space-x-reverse">
+                    <button onClick={() => toggleVerify(u)} className="text-xs font-bold text-amber-600 dark:text-amber-400 hover:underline">
+                      {u.is_verified ? 'إلغاء التوثيق' : 'توثيق'}
                     </button>
                     {u.status === 'active' ? (
-                      <button onClick={() => setStatus(u, 'suspended')} className="text-xs font-semibold text-orange-600">Suspend</button>
+                      <button onClick={() => setStatus(u, 'suspended')} className="text-xs font-bold text-rose-600 dark:text-rose-400 hover:underline">حظر</button>
                     ) : (
-                      <button onClick={() => setStatus(u, 'active')} className="text-xs font-semibold text-emerald-600">Activate</button>
+                      <button onClick={() => setStatus(u, 'active')} className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline">تفعيل</button>
                     )}
-                    <button onClick={() => deleteUser(u)} className="text-xs font-semibold text-red-600">Delete</button>
+                    <button onClick={() => deleteUser(u)} className="text-xs font-bold text-red-500 hover:underline">حذف</button>
                   </td>
                 </tr>
               ))}
               {paginated.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-slate-400 text-sm">No users found.</td>
+                  <td colSpan={5} className="px-4 py-8 text-center text-slate-400 dark:text-slate-500 text-sm">لا يوجد مستخدمين مطابقين.</td>
                 </tr>
               )}
             </tbody>
@@ -170,17 +170,17 @@ export default function AdminUsers() {
           <button
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={currentPage === 1}
-            className="w-9 h-9 rounded-xl border border-slate-200 flex items-center justify-center hover:bg-slate-50 disabled:opacity-40"
+            className="w-9 h-9 rounded-xl border border-slate-200 dark:border-[#1E2B4A] bg-white dark:bg-[#111A30] text-slate-700 dark:text-slate-300 flex items-center justify-center hover:bg-slate-50 dark:hover:bg-[#0A1020] disabled:opacity-40"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
-          <span className="text-sm text-slate-600 font-medium">
-            Page {currentPage} of {totalPages}
+          <span className="text-sm text-slate-600 dark:text-slate-400 font-bold">
+            صفحة {currentPage} من {totalPages}
           </span>
           <button
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={currentPage === totalPages}
-            className="w-9 h-9 rounded-xl border border-slate-200 flex items-center justify-center hover:bg-slate-50 disabled:opacity-40"
+            className="w-9 h-9 rounded-xl border border-slate-200 dark:border-[#1E2B4A] bg-white dark:bg-[#111A30] text-slate-700 dark:text-slate-300 flex items-center justify-center hover:bg-slate-50 dark:hover:bg-[#0A1020] disabled:opacity-40"
           >
             <ChevronRight className="w-4 h-4" />
           </button>
