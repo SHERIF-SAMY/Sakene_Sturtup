@@ -20,6 +20,9 @@ type Listing = {
 
 type Property = {
   id: number;
+  property_number?: string | number;
+  deal_type?: string;
+  property_type?: string;
   title: string;
   description: string;
   district: string;
@@ -782,7 +785,9 @@ export default function PropertyDetails() {
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowBook(false)} />
           <div className="relative bg-white dark:bg-[#111A30] w-full max-w-md rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl border border-slate-100 dark:border-[#1E2B4A] max-h-[90vh] overflow-y-auto z-10 text-slate-900 dark:text-white">
-            <h3 className="text-xl font-bold text-slate-900 dark:text-white">طلب حجز المعاينة</h3>
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white">
+              {property?.deal_type === 'for_sale' ? 'طلب معاينة واستفسار تملك' : 'طلب حجز المعاينة'}
+            </h3>
             <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">اختر التاريخ والوقت المناسبين للمعاينة.</p>
 
             <div className="mt-5 space-y-3">
@@ -962,7 +967,7 @@ export default function PropertyDetails() {
                 disabled={booking}
                 className="py-3 rounded-xl bg-brand-600 text-white font-semibold disabled:opacity-60"
               >
-                {booking ? 'جاري الحجز…' : 'تأكيد الحجز'}
+                {booking ? 'جاري الإرسال…' : property?.deal_type === 'for_sale' ? 'تأكيد طلب المعاينة' : 'تأكيد الحجز'}
               </button>
             </div>
           </div>
