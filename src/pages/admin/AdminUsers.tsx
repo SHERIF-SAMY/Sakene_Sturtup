@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { apiGet, apiSend } from '../../lib/api';
 import LoadingSpinner from '../../components/LoadingSpinner';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Phone } from 'lucide-react';
 
 type Profile = {
   id: string;
@@ -62,7 +62,8 @@ export default function AdminUsers() {
     const matchesSearch =
       !search ||
       `${u.first_name} ${u.last_name}`.toLowerCase().includes(search.toLowerCase()) ||
-      u.email.toLowerCase().includes(search.toLowerCase());
+      u.email.toLowerCase().includes(search.toLowerCase()) ||
+      (u.phone || '').toLowerCase().includes(search.toLowerCase());
     const matchesRole = !roleFilter || u.role === roleFilter;
     return matchesSearch && matchesRole;
   });
@@ -120,6 +121,11 @@ export default function AdminUsers() {
                   <td className="px-4 py-3">
                     <p className="font-bold text-slate-900 dark:text-white">{u.first_name} {u.last_name}</p>
                     <p className="text-xs text-slate-500 dark:text-slate-400">{u.email}</p>
+                    {u.phone && (
+                      <a href={`tel:${u.phone}`} className="text-xs text-amber-500 font-bold flex items-center gap-1 mt-0.5 hover:underline">
+                        <Phone className="w-3 h-3" />{u.phone}
+                      </a>
+                    )}
                   </td>
                   <td className="px-4 py-3">
                     <select
